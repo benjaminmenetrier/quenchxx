@@ -230,11 +230,11 @@ void GeoVaLs::print(std::ostream & os) const {
     }
     comm_.allReduceInPlace(zmin, eckit::mpi::min());
     comm_.allReduceInPlace(zmax, eckit::mpi::max());
-    if (obsSpace_.size() > 0) {
+    if (obsSpace_.sizeGlb() > 0) {
       comm_.allReduceInPlace(zavg, eckit::mpi::sum());
-      zavg /= obsSpace_.size();
+      zavg /= obsSpace_.sizeGlb();
     }
-    os << "GeoVaLs for " << gvField.name() << "[" << obsSpace_.size() << "]: "
+    os << "GeoVaLs for " << gvField.name() << "[" << obsSpace_.sizeGlb() << "]: "
       << "Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg << std::endl;
   }
 

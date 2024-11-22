@@ -46,11 +46,9 @@ ecbuild_add_executable( TARGET  quenchxx_variational.x
                         SOURCES ${version}/quenchxxVariational.cc
                         LIBS    ${libs} )
 
-if( NOT ECSABER )
-    ecbuild_add_executable( TARGET  quenchxx_letkf.x
-                            SOURCES ${version}/quenchxxLETKF.cc
-                            LIBS    ${libs} )
-endif()
+ecbuild_add_executable( TARGET  quenchxx_letkf.x
+                        SOURCES ${version}/quenchxxLETKF.cc
+                        LIBS    ${libs} )
 
 if( ECSABER )
     ecbuild_add_executable( TARGET  quenchxx_makeobs.x

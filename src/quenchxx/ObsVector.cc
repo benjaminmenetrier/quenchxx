@@ -12,6 +12,8 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/util/missingValues.h"
+
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -23,7 +25,8 @@ namespace quenchxx {
 // -----------------------------------------------------------------------------
 
 ObsVector::ObsVector(const ObsSpace & obsSpace)
-  : comm_(obsSpace.getComm()), obsSpace_(obsSpace), data_(obsSpace.sizeLoc()) {
+  : comm_(obsSpace.getComm()), obsSpace_(obsSpace), data_(obsSpace.sizeLoc()),
+    missing_(util::missingValue<double>()) {
   oops::Log::trace() << classname() << "::ObsVector starting" << std::endl;
 
   zero();
@@ -35,7 +38,8 @@ ObsVector::ObsVector(const ObsSpace & obsSpace)
 
 ObsVector::ObsVector(const ObsVector & other,
                      const bool copy)
-  : comm_(other.comm_), obsSpace_(other.obsSpace_), data_(other.data_.size()) {
+  : comm_(other.comm_), obsSpace_(other.obsSpace_), data_(other.data_.size()),
+    missing_(util::missingValue<double>()) {
   oops::Log::trace() << classname() << "::ObsVector starting" << std::endl;
 
   if (copy) {
@@ -142,6 +146,18 @@ void ObsVector::zero() {
 
 // -----------------------------------------------------------------------------
 
+void ObsVector::ones() {
+  oops::Log::trace() << classname() << "::ones starting" << std::endl;
+
+  for (double & val : data_) {
+    val = 1.0;
+  }
+
+  oops::Log::trace() << classname() << "::ones done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsVector::invert() {
   oops::Log::trace() << classname() << "::invert starting" << std::endl;
 
@@ -180,14 +196,14 @@ void ObsVector::random() {
     static std::normal_distribution<double> randomDistrib(0.0, 1.0);
 
     // Generate perturbations
-    std::vector<double> randomPertTmp(obsSpace_.size());
-    for (size_t jj = 0; jj < obsSpace_.size(); ++jj) {
+    std::vector<double> randomPertTmp(obsSpace_.sizeGlb());
+    for (size_t jj = 0; jj < obsSpace_.sizeGlb(); ++jj) {
       randomPertTmp[jj] = randomDistrib(generator);
     }
 
     // Reorder perturbations
-    randomPert.resize(obsSpace_.size());
-    for (size_t jj = 0; jj < obsSpace_.size(); ++jj) {
+    randomPert.resize(obsSpace_.sizeGlb());
+    for (size_t jj = 0; jj < obsSpace_.sizeGlb(); ++jj) {
       randomPert[jj] = randomPertTmp[obsSpace_.order()[jj]];
     }
   }
@@ -235,13 +251,58 @@ double ObsVector::rms() const {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     zz += data_[jj]*data_[jj];
   }
-  if (obsSpace_.size() > 0) {
+  if (obsSpace_.sizeGlb() > 0) {
     comm_.allReduceInPlace(zz, eckit::mpi::sum());
-    zz = sqrt(zz/obsSpace_.size());
+    zz = sqrt(zz/obsSpace_.sizeGlb());
   }
 
   oops::Log::trace() << classname() << "::rms done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsVector::mask(const ObsVector & mask) {
+  oops::Log::trace() << classname() << "::mask starting" << std::endl;
+
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask(jj) == missing_) data_.at(jj) = missing_;
+  }
+
+  oops::Log::trace() << classname() << "::mask starting" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+Eigen::VectorXd ObsVector::packEigen(const ObsVector & mask) const {
+  oops::Log::trace() << classname() << "::packEigen starting" << std::endl;
+
+  Eigen::VectorXd vec(packEigenSize(mask));
+  size_t ii = 0;
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (mask(jj) != missing_)) {
+      vec(ii++) = data_[jj];
+    }
+  }
+
+  oops::Log::trace() << classname() << "::packEigen done" << std::endl;
+  return vec;
+}
+
+// -----------------------------------------------------------------------------
+
+size_t ObsVector::packEigenSize(const ObsVector & mask) const {
+  oops::Log::trace() << classname() << "::packEigenSize starting" << std::endl;
+
+  size_t ii = 0;
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (mask(jj) != missing_)) {
+      ii++;
+    }
+  }
+
+  oops::Log::trace() << classname() << "::packEigenSize done" << std::endl;
+  return ii;
 }
 
 // -----------------------------------------------------------------------------
@@ -259,12 +320,12 @@ void ObsVector::print(std::ostream & os) const {
   }
   comm_.allReduceInPlace(zmin, eckit::mpi::min());
   comm_.allReduceInPlace(zmax, eckit::mpi::max());
-  if (obsSpace_.size() > 0) {
+  if (obsSpace_.sizeGlb() > 0) {
     comm_.allReduceInPlace(zavg, eckit::mpi::sum());
-    zavg /= obsSpace_.size();
+    zavg /= obsSpace_.sizeGlb();
   }
 
-  os << "quenchxx[" << obsSpace_.size() << "]: Min=" << zmin << ", Max=" << zmax
+  os << "quenchxx[" << obsSpace_.sizeGlb() << "]: Min=" << zmin << ", Max=" << zmax
     << ", Average=" << zavg;
 
   oops::Log::trace() << classname() << "::print done" << std::endl;

@@ -67,6 +67,8 @@ if( ECSABER )
     ObsAuxIncrement.h
     ObsError.cc
     ObsError.h
+    ObsLocalizationEC.cc
+    ObsLocalizationEC.h
     ObsOperator.cc
     ObsOperator.h
     Variables.h
@@ -80,8 +82,8 @@ else()
     Constants.h
     LinearVariableChange.cc
     LinearVariableChange.h
-    ObsLocalization.cc
-    ObsLocalization.h
+    ObsLocalizationJEDI.cc
+    ObsLocalizationJEDI.h
     VaderCookbook.h
     VariableChange.cc
     VariableChange.h

@@ -49,7 +49,7 @@ void ObsError::setupWeights(const ObsVector & dy) {
 
   if (lvarqc_) {
     // Setup W^1/2
-    for (size_t jo = 0; jo < dy.size(); ++jo) {
+    for (size_t jo = 0; jo < dy.sizeLoc(); ++jo) {
       // Initialization
       (*wghtsqrt_)(jo) = 1.0;
 

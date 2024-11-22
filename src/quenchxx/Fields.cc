@@ -266,6 +266,31 @@ void Fields::constantValue(const double & value) {
 
 // -----------------------------------------------------------------------------
 
+void Fields::constantValue(const std::vector<double> & profile) {
+  oops::Log::trace() << classname() << "::constantValue starting" << std::endl;
+
+  for (const auto & var : vars_) {
+    atlas::Field field = fset_[var.name()];
+    const std::string gmaskName = "gmask_" + std::to_string(geom_->groupIndex(var.name()));
+    const auto gmaskView = atlas::array::make_view<int, 2>(geom_->fields()[gmaskName]);
+    if (field.rank() == 2) {
+      ASSERT(field.shape(1) == profile.size());
+      auto view = atlas::array::make_view<double, 2>(field);
+      view.assign(0.0);
+      for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
+        for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
+          if (gmaskView(jnode, jlevel) == 1) view(jnode, jlevel) = profile[jlevel];
+        }
+      }
+    }
+  }
+  fset_.set_dirty(false);
+
+  oops::Log::trace() << classname() << "::constantValue end" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 void Fields::constantValue(const eckit::Configuration & config) {
   oops::Log::trace() << "Fields::constantValue starting" << std::endl;
   for (const auto & group : config.getSubConfigurations("constant group-specific value")) {
@@ -1641,6 +1666,7 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
           bottom = std::min(bottom, vert_coordView(jo, k));
           top = std::max(top, vert_coordView(jo, k));
         }
+std::cout << bottom << " / " << z << " / " << top << std::endl;
         ASSERT(z >= bottom);
         ASSERT(z <= top);
         double zinf = -std::numeric_limits<double>::max();

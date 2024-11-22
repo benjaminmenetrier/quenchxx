@@ -14,8 +14,8 @@ endmacro()
 macro( create_test name mpi exec )
     if( ECSABER )
         ecbuild_add_test( TARGET quenchxx_test_${name}_${mpi}
-                          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/ecmwf_compare.sh
-                          ARGS ${CMAKE_CURRENT_SOURCE_DIR}/ecmwf_compare.py
+                          COMMAND ${CMAKE_BINARY_DIR}/bin/quenchxx_ecmwf_compare.sh
+                          ARGS ${CMAKE_BINARY_DIR}/bin/quenchxx_ecmwf_compare.py
                                ${mpi}
                                1
                                "${CMAKE_BINARY_DIR}/bin/quenchxx_${exec}.x testinput/ec/${name}.json"
@@ -107,6 +107,7 @@ testinput/ec/glb_ensemble_12.json
 testinput/ec/glb_ensemble_18.json
 testinput/ec/glb_hofx.json
 testinput/ec/glb_interfaces.json
+testinput/ec/glb_letkf.json
 testinput/ec/glb_makeobs_06.json
 testinput/ec/glb_makeobs_12.json
 testinput/ec/glb_makeobs_18.json
@@ -127,6 +128,7 @@ testinput/ec/reg_ensemble_12.json
 testinput/ec/reg_ensemble_18.json
 testinput/ec/reg_hofx.json
 testinput/ec/reg_interfaces.json
+testinput/ec/reg_letkf.json
 testinput/ec/reg_makeobs_06.json
 testinput/ec/reg_makeobs_12.json
 testinput/ec/reg_makeobs_18.json
@@ -243,6 +245,7 @@ testref/ec/glb_ensemble_06.ref
 testref/ec/glb_ensemble_12.ref
 testref/ec/glb_ensemble_18.ref
 testref/ec/glb_hofx.ref
+testref/ec/glb_letkf.ref
 testref/ec/glb_makeobs_06.ref
 testref/ec/glb_makeobs_12.ref
 testref/ec/glb_makeobs_18.ref
@@ -262,6 +265,7 @@ testref/ec/reg_ensemble_06.ref
 testref/ec/reg_ensemble_12.ref
 testref/ec/reg_ensemble_18.ref
 testref/ec/reg_hofx.ref
+testref/ec/reg_letkf.ref
 testref/ec/reg_makeobs_06.ref
 testref/ec/reg_makeobs_12.ref
 testref/ec/reg_makeobs_18.ref
@@ -374,10 +378,7 @@ foreach( mpi "1" "4" )
         create_test( ${domain}_3dvar ${mpi} variational )
         create_test( ${domain}_3densvar ${mpi} variational )
         create_test( ${domain}_4densvar ${mpi} variational )
-
-        if( NOT ECSABER )
-            create_test( ${domain}_letkf ${mpi} letkf )
-        endif()
+        create_test( ${domain}_letkf ${mpi} letkf )
     endforeach()
 
     if( ECSABER )

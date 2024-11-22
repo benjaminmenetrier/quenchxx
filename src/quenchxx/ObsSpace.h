@@ -65,6 +65,8 @@ class ObsSpace : public util::Printable,
   void getdb(const std::string &,
              std::vector<double> &) const;
 
+  std::vector<atlas::Point3> & locations() const
+    {return locs_;}
   std::vector<atlas::Point3> locations(const util::DateTime &,
                                        const util::DateTime &) const;
   std::vector<size_t> timeSelect(const util::DateTime &,
@@ -72,7 +74,7 @@ class ObsSpace : public util::Printable,
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector &,
                const ObsVector &);
-  const size_t & size() const
+  const size_t & sizeGlb() const
     {return nobsGlb_;}
   const size_t & sizeLoc() const
     {return nobsLoc_;}
@@ -80,6 +82,7 @@ class ObsSpace : public util::Printable,
     {return nobsLocVec_;}
   const std::vector<int> & order() const
     {return order_;}
+
   void screenObservations(const ObsVector &,
                           const GeoVaLs &) const;
   void saveObservations() const {}
@@ -103,6 +106,7 @@ class ObsSpace : public util::Printable,
   mutable std::map<std::string, std::vector<double> > screenedData_;
   std::string nameIn_;
   std::string nameOut_;
+  size_t nobsOwn_;
   size_t nobsLoc_;
   size_t nobsGlb_;
   const varns::Variables vars_;
