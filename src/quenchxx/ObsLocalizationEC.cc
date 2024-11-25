@@ -76,12 +76,16 @@ void ObsLocalization::computeLocalization(const GeometryIterator & geometryItera
     if ((horDist < 1.0) && (verDist < 1.0)) {
       // Compute localization as a product of horizontal and vertical components
       const double loc = locFunc(horDist)*locFunc(verDist);
-      if (obsVector(jo) != missing) {
-        obsVector(jo) *= loc;
+      for (size_t jvar = 0; jvar < obsVector.nvars(); ++jvar) {
+        if (obsVector(jvar, jo) != missing) {
+          obsVector.set(jvar, jo, obsVector(jvar, jo)*loc);
+        }
       }
     } else {
-      // Set at missing value
-      obsVector(jo) = missing;
+      for (size_t jvar = 0; jvar < obsVector.nvars(); ++jvar) {
+        // Set at missing value
+        obsVector.set(jvar, jo, missing);
+      }
     }
   }
 

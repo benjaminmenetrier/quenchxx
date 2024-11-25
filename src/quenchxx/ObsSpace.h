@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
 #include "atlas/util/Point.h"
 
 #include "eckit/mpi/Comm.h"
@@ -60,13 +61,9 @@ class ObsSpace : public util::Printable,
   const eckit::mpi::Comm & getComm() const
     {return comm_;}
 
-  void putdb(const std::string &,
-             const std::vector<double> &) const;
-  void getdb(const std::string &,
-             std::vector<double> &) const;
+  void putdb(const atlas::FieldSet &) const;
+  void getdb(atlas::FieldSet &) const;
 
-  std::vector<atlas::Point3> & locations() const
-    {return locs_;}
   std::vector<atlas::Point3> locations(const util::DateTime &,
                                        const util::DateTime &) const;
   std::vector<size_t> timeSelect(const util::DateTime &,
@@ -74,6 +71,11 @@ class ObsSpace : public util::Printable,
   void generateDistribution(const eckit::Configuration &);
   void printJo(const ObsVector &,
                const ObsVector &);
+  void screenObservations(const ObsVector &,
+                          const GeoVaLs &) const;
+  void saveObservations() const {}
+
+
   const size_t & sizeGlb() const
     {return nobsGlb_;}
   const size_t & sizeLoc() const
@@ -82,10 +84,10 @@ class ObsSpace : public util::Printable,
     {return nobsLocVec_;}
   const std::vector<int> & order() const
     {return order_;}
-
-  void screenObservations(const ObsVector &,
-                          const GeoVaLs &) const;
-  void saveObservations() const {}
+  const varns::Variables & vars() const
+    {return vars_;}
+  std::vector<atlas::Point3> & locations() const // TODO(Benjamin): to remove
+    {return locs_;}
 
  private:
   void print(std::ostream &) const;
@@ -100,13 +102,12 @@ class ObsSpace : public util::Printable,
   const std::shared_ptr<const Geometry> geom_;
   mutable std::vector<util::DateTime> times_;
   mutable std::vector<atlas::Point3> locs_;
-  mutable std::map<std::string, std::vector<double> > data_;
+  mutable std::vector<atlas::FieldSet> data_;
   mutable std::vector<util::DateTime> screenedTimes_;
   mutable std::vector<atlas::Point3> screenedLocations_;
-  mutable std::map<std::string, std::vector<double> > screenedData_;
+  mutable std::vector<atlas::FieldSet> screenedData_;
   std::string nameIn_;
   std::string nameOut_;
-  size_t nobsOwn_;
   size_t nobsLoc_;
   size_t nobsGlb_;
   const varns::Variables vars_;

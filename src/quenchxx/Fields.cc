@@ -1666,7 +1666,6 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
           bottom = std::min(bottom, vert_coordView(jo, k));
           top = std::max(top, vert_coordView(jo, k));
         }
-std::cout << bottom << " / " << z << " / " << top << std::endl;
         ASSERT(z >= bottom);
         ASSERT(z <= top);
         double zinf = -std::numeric_limits<double>::max();

@@ -78,7 +78,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
       }
     }
   }
-  ASSERT(vars_.size() == 1);
 
   oops::Log::trace() << classname() << "::ObsSpace done" << std::endl;
 }
@@ -98,18 +97,30 @@ ObsSpace::~ObsSpace() {
 
 // -----------------------------------------------------------------------------
 
-void ObsSpace::putdb(const std::string & col,
-                     const std::vector<double> & vec) const {
+void ObsSpace::putdb(const atlas::FieldSet & fset) const {
   oops::Log::trace() << classname() << "::putdb starting" << std::endl;
 
-  ASSERT(vec.size() == nobsLoc_);
-  if (data_.find(col) == data_.end()) {
-    data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
-  } else {
-    std::map<std::string, std::vector<double> >::iterator ic = data_.find(col);
-    for (size_t jo = 0; jo < nobsLoc_; ++jo) {
-      ic->second[jo] = vec[jo];
+  // Check Fields size
+  for (const auto & field : fset) {
+    ASSERT(field.shape(0) == nobsLoc_);
+    ASSERT(field.shape(1) == 1);
+  }
+
+  bool existingFieldSet = false;
+  for (auto & dataFset : data_) {
+    if (dataFset.name() == fset.name()) {
+      // Existing FieldSet, clear and reset fields
+      existingFieldSet = true;
+      dataFset.clear();
+      for (const auto & field : fset) {
+        dataFset.add(field);
+      }
     }
+  }
+
+  if (!existingFieldSet) {
+    // FieldSet name not found, inserting new FieldSet
+    data_.push_back(fset);
   }
 
   oops::Log::trace() << classname() << "::putdb done" << std::endl;
@@ -117,15 +128,29 @@ void ObsSpace::putdb(const std::string & col,
 
 // -----------------------------------------------------------------------------
 
-void ObsSpace::getdb(const std::string & col,
-                     std::vector<double> & vec) const {
+void ObsSpace::getdb(atlas::FieldSet & fset) const {
   oops::Log::trace() << classname() << "::getdb starting" << std::endl;
 
-  std::map<std::string, std::vector<double> >::const_iterator ic = data_.find(col);
-  ASSERT(ic != data_.end());
-  vec.resize(nobsLoc_);
-  for (size_t jo = 0; jo < nobsLoc_; ++jo) {
-    vec[jo] = ic->second[jo];
+  fset.clear();
+  bool existingFieldSet = false;
+  for (const auto & dataFset : data_) {
+    if (dataFset.name() == fset.name()) {
+      // FieldSet found, add fields
+      existingFieldSet = true;
+      for (const auto & field : dataFset) {
+        fset.add(field);
+      }
+    }
+  }
+
+  if (!existingFieldSet) {
+    // FieldSet name not found
+    std::string message = "Cannot find group " + fset.name() + " in observation database,"
+      + "existing groups are: ";
+    for (const auto & dataFset : data_) {
+      message += dataFset.name() + " ";
+    }
+    throw eckit::Exception(message, Here());
   }
 
   oops::Log::trace() << classname() << "::getdb done" << std::endl;
@@ -312,12 +337,19 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   }
 
   // Generate observations error
-  const double err = config.getDouble("error");
-  std::vector<double> obsErr(nobsLoc_);
-  for (size_t jo = 0; jo < nobsLoc_; ++jo) {
-    obsErr[jo] = err;
+  const std::vector<double> err = config.getDoubleVector("error");
+  atlas::FieldSet fset;
+  fset.name() = config.getString("obserror");
+  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+    atlas::Field field(vars_[jvar].name(), atlas::array::make_datatype<double>(),
+      atlas::array::make_shape(nobsLoc_, 1));
+    auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+      view(jo, 0) = err[jvar];
+    }
+    fset.add(field);
   }
-  this->putdb(config.getString("obserror"), obsErr);
+  this->putdb(fset);
 
   oops::Log::trace() << classname() << "::generateDistribution done" << std::endl;
 }
@@ -340,10 +372,12 @@ void ObsSpace::screenObservations(const ObsVector & dep,
   oops::Log::trace() << classname() << "::screenObservations starting" << std::endl;
 
   // Define whether observations are screened or not
+  // TODO(Benjamin): more clever screening
   std::vector<bool> validObs(nobsLoc_);
   for (size_t jo = 0; jo < nobsLoc_; ++jo) {
     validObs[jo] = true;
   }
+  const int nobsLocScr = std::count(validObs.cbegin(), validObs.cend(), true);
 
   // Apply screening on time, location and columns
   for (size_t jo = 0; jo < nobsLoc_; ++jo) {
@@ -352,14 +386,24 @@ void ObsSpace::screenObservations(const ObsVector & dep,
       screenedLocations_.push_back(locs_[jo]);
     }
   }
-  for (auto & col : data_) {
-    std::vector<double> newvec;
-    for (size_t jo = 0; jo < nobsLoc_; ++jo) {
-      if (validObs[jo]) {
-        newvec.push_back(col.second[jo]);
+  for (const auto & dataFset : data_) {
+    atlas::FieldSet fset;
+    fset.name() = dataFset.name();
+    for (const auto & dataField : dataFset) {
+      atlas::Field field(dataField.name(), atlas::array::make_datatype<double>(),
+        atlas::array::make_shape(nobsLocScr, 1));
+      const auto dataView = atlas::array::make_view<double, 2>(dataField);
+      auto view = atlas::array::make_view<double, 2>(field);
+      size_t joScr = 0;
+      for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+        if (validObs[jo]) {
+          view(joScr, 0) = dataView(jo, 0);
+          ++joScr;
+        }
       }
+      fset.add(field);
     }
-    screenedData_.insert(std::pair<std::string, std::vector<double> >(col.first, newvec));
+    screenedData_.push_back(fset);
   }
 
   // Write screened observations
@@ -373,18 +417,12 @@ void ObsSpace::screenObservations(const ObsVector & dep,
 void ObsSpace::read(const std::string & filePath) {
   oops::Log::trace() << classname() << "::read starting" << std::endl;
 
-  // Local sizes
-  size_t ncol;
-
-  // Global vectors
-  std::vector<std::string> colNames;
-  std::vector<int> times;
-  std::vector<double> locs;
-  std::vector<double> cols;
+  // Global size and vectors
+  int ngrp;
+  std::vector<int> partition;
   std::vector<int> timesGlb;
   std::vector<double> locsGlb;
-  std::vector<double> colsGlb;
-  std::vector<std::vector<double>> colsVec;
+  std::vector<double> dataGlb;
 
   // Counts and displacements
   nobsLocVec_.resize(comm_.size());
@@ -392,10 +430,11 @@ void ObsSpace::read(const std::string & filePath) {
   // Define source grid horizontal distribution
   const atlas::grid::Distribution distribution = geom_->partitioner().partition(geom_->grid());
 
-  if (comm_.rank() == 0) {
-    // NetCDF IDs
-    int retval, ncid, nobs_id, dateTime_id, order_id, longitude_id, latitude_id, height_id, col_id;
+  // NetCDF IDs
+  int retval, ncid, nobs_id, dateTime_id, order_id, longitude_id, latitude_id, height_id, data_id;
+  std::vector<int> group_ids;
 
+  if (comm_.rank() == 0) {
     // Open NetCDF file
     std::string ncFilePath = filePath + ".nc";
     oops::Log::info() << "Reading file: " << ncFilePath << std::endl;
@@ -406,20 +445,12 @@ void ObsSpace::read(const std::string & filePath) {
     if (retval = nc_inq_dimlen(ncid, nobs_id, &nobsGlb_)) ERR(retval);
 
     // Get groups list
-    int ngrp;
     if (retval = nc_inq_grps(ncid, &ngrp, NULL)) ERR(retval);
-    std::vector<int> group_ids(ngrp);
+    group_ids.resize(ngrp);
     if (retval = nc_inq_grps(ncid, NULL, group_ids.data())) ERR(retval);
-    ncol = ngrp-1;
-
-    // Resize vectors
-    colNames.resize(ncol);
-    times.resize(6*nobsGlb_);
-    locs.resize(3*nobsGlb_);
-    cols.resize(ncol*nobsGlb_);
-    order_.resize(nobsGlb_);
 
     // Get order if available
+    order_.resize(nobsGlb_);
     retval = nc_inq_varid(ncid, "order", &order_id);
     if (retval == NC_NOERR) {
       if (retval = nc_get_var_int(ncid, order_id, order_.data())) ERR(retval);
@@ -428,71 +459,42 @@ void ObsSpace::read(const std::string & filePath) {
         order_[jo] = jo;
       }
     }
-    size_t jgrpData = 0;
-    for (int jgrp = 0; jgrp < ngrp; ++jgrp) {
-      // Get group name
-      size_t grpNameLen;
-      if (retval = nc_inq_grpname_len(group_ids[jgrp], &grpNameLen)) ERR(retval);
-      std::string grpName;
-      grpName.resize(grpNameLen);
-      if (retval = nc_inq_grpname(group_ids[jgrp], &grpName[0])) ERR(retval);
 
-      if (grpName.substr(0, grpNameLen-1) == "MetaData") {
-        // Get dateTime
-        std::vector<int64_t> dateTime(nobsGlb_);
-        if (retval = nc_inq_varid(group_ids[jgrp], "dateTime", &dateTime_id)) ERR(retval);
-        if (retval = nc_get_var_long(group_ids[jgrp], dateTime_id, dateTime.data())) ERR(retval);
-        const std::string dateTime_units_key = "units";
-        size_t attlen;
-        if (retval = nc_inq_attlen(group_ids[jgrp], dateTime_id, dateTime_units_key.c_str(),
-          &attlen)) ERR(retval);
-        char **dateTime_units_char = reinterpret_cast<char**>(malloc(attlen*sizeof(char*)));
-        memset(dateTime_units_char, 0, attlen*sizeof(char*));
-        if (retval = nc_get_att_string(group_ids[jgrp], dateTime_id, dateTime_units_key.c_str(),
-          dateTime_units_char)) ERR(retval);
-        std::string dateTime_units_value(*dateTime_units_char);
-        util::DateTime start(dateTime_units_value.substr(14, 20));
-        for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-          util::DateTime startTest = start + util::Duration(dateTime[jo]);
-          startTest.toYYYYMMDDhhmmss(times[6*jo], times[6*jo+1], times[6*jo+2], times[6*jo+3],
-            times[6*jo+4], times[6*jo+5]);
-        }
+    // Get MetaData
+    int meta_group_id;
+    if (retval = nc_inq_grp_ncid(ncid, "MetaData", &meta_group_id)) ERR(retval);
 
-        // Get longitude, latitude and height
-        std::vector<float> longitude(nobsGlb_);
-        std::vector<float> latitude(nobsGlb_);
-        std::vector<float> height(nobsGlb_);
-        if (retval = nc_inq_varid(group_ids[jgrp], "longitude", &longitude_id)) ERR(retval);
-        if (retval = nc_get_var_float(group_ids[jgrp], longitude_id, longitude.data()))
-          ERR(retval);
-        if (retval = nc_inq_varid(group_ids[jgrp], "latitude", &latitude_id)) ERR(retval);
-        if (retval = nc_get_var_float(group_ids[jgrp], latitude_id, latitude.data())) ERR(retval);
-        if (retval = nc_inq_varid(group_ids[jgrp], "height", &height_id)) ERR(retval);
-        if (retval = nc_get_var_float(group_ids[jgrp], height_id, height.data())) ERR(retval);
-        for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-          locs[3*jo] = static_cast<double>(longitude[jo]);
-          locs[3*jo+1] = static_cast<double>(latitude[jo]);
-          locs[3*jo+2] = static_cast<double>(height[jo]);
-        }
-      } else {
-        // Get other groups
-        colNames[jgrpData] = grpName.substr(0, grpNameLen-1);
-        std::vector<float> col(nobsGlb_);
-        if (retval = nc_inq_varid(group_ids[jgrp], vars_[0].name().c_str(), &col_id)) ERR(retval);
-        if (retval = nc_get_var_float(group_ids[jgrp], col_id, col.data())) ERR(retval);
-        for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-          cols[ncol*jo+jgrpData] = static_cast<double>(col[jo]);
-        }
-        ++jgrpData;
-      }
-    }
+    // Get dateTime from MetaData
+    std::vector<int64_t> dateTime(nobsGlb_);
+    if (retval = nc_inq_varid(meta_group_id, "dateTime", &dateTime_id)) ERR(retval);
+    if (retval = nc_get_var_long(meta_group_id, dateTime_id, dateTime.data())) ERR(retval);
+    const std::string dateTime_units_key = "units";
+    size_t attlen;
+    if (retval = nc_inq_attlen(meta_group_id, dateTime_id, dateTime_units_key.c_str(),
+      &attlen)) ERR(retval);
+    char **dateTime_units_char = reinterpret_cast<char**>(malloc(attlen*sizeof(char*)));
+    memset(dateTime_units_char, 0, attlen*sizeof(char*));
+    if (retval = nc_get_att_string(meta_group_id, dateTime_id, dateTime_units_key.c_str(),
+      dateTime_units_char)) ERR(retval);
+    std::string dateTime_units_value(*dateTime_units_char);
+    util::DateTime start(dateTime_units_value.substr(14, 20));
 
-    // Close file
-    if (retval = nc_close(ncid)) ERR(retval);
+    // Get longitude, latitude and height from MetaData
+    std::vector<float> longitude(nobsGlb_);
+    std::vector<float> latitude(nobsGlb_);
+    std::vector<float> height(nobsGlb_);
+    if (retval = nc_inq_varid(meta_group_id, "longitude", &longitude_id)) ERR(retval);
+    if (retval = nc_get_var_float(meta_group_id, longitude_id, longitude.data()))
+      ERR(retval);
+    if (retval = nc_inq_varid(meta_group_id, "latitude", &latitude_id)) ERR(retval);
+    if (retval = nc_get_var_float(meta_group_id, latitude_id, latitude.data())) ERR(retval);
+    if (retval = nc_inq_varid(meta_group_id, "height", &height_id)) ERR(retval);
+    if (retval = nc_get_var_float(meta_group_id, height_id, height.data())) ERR(retval);
 
     // Split observations between tasks
-    std::vector<int> partition(nobsGlb_);
-    if (true) {  // TODO(Benjamin): other distributions
+    // TODO(Benjamin): other distributions
+    partition.resize(nobsGlb_);
+    if (true) {
       // Using nearest neighbor
       atlas::util::IndexKDTree search;
       search.reserve(geom_->grid().size());
@@ -508,7 +510,7 @@ void ObsSpace::read(const std::string & filePath) {
 
       for (size_t jo = 0; jo < nobsGlb_; ++jo) {
         // Find MPI task
-        atlas::PointLonLat pointLonLat(locs[3*jo], locs[3*jo+1]);
+        atlas::PointLonLat pointLonLat(longitude[jo], latitude[jo]);
         pointLonLat.normalise();
 
         // Search nearest neighborass
@@ -520,35 +522,27 @@ void ObsSpace::read(const std::string & filePath) {
       }
     }
 
-    // Reorder vectors
-    timesGlb.resize(times.size());
-    locsGlb.resize(locs.size());
-    colsGlb.resize(cols.size());
+    // Get ordered time and location
+    timesGlb.resize(6*nobsGlb_);
+    locsGlb.resize(3*nobsGlb_);
     std::vector<int> iobsLocVec(comm_.size(), 0);
-
     for (size_t jo = 0; jo < nobsGlb_; ++jo) {
       size_t offset = 0;
       for (int jt = 0; jt < partition[jo]; ++jt) {
         offset += nobsLocVec_[jt];
       }
       offset += iobsLocVec[partition[jo]];
-      timesGlb[6*offset+0] = times[6*jo+0];
-      timesGlb[6*offset+1] = times[6*jo+1];
-      timesGlb[6*offset+2] = times[6*jo+2];
-      timesGlb[6*offset+3] = times[6*jo+3];
-      timesGlb[6*offset+4] = times[6*jo+4];
-      timesGlb[6*offset+5] = times[6*jo+5];
-      locsGlb[3*offset+0] = locs[3*jo+0];
-      locsGlb[3*offset+1] = locs[3*jo+1];
-      locsGlb[3*offset+2] = locs[3*jo+2];
-      for (size_t jc = 0; jc < ncol; ++jc) {
-        colsGlb[ncol*offset+jc] = cols[ncol*jo+jc];
-      }
+      util::DateTime startTest = start + util::Duration(dateTime[jo]);
+      startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
+        timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
+      locsGlb[3*offset+0] = static_cast<double>(longitude[jo]);
+      locsGlb[3*offset+1] = static_cast<double>(latitude[jo]);
+      locsGlb[3*offset+2] = static_cast<double>(height[jo]);
       ++iobsLocVec[partition[jo]];
     }
   }
 
-  // Broadcast number of observations
+  // Broadcast number of observations for each task
   comm_.broadcast(nobsLocVec_, 0);
   nobsLoc_ = nobsLocVec_[comm_.rank()];
   nobsGlb_ = 0;
@@ -556,71 +550,109 @@ void ObsSpace::read(const std::string & filePath) {
     nobsGlb_ += nobsLocVec_[jt];
   }
 
-  // Broadcast number of columns
-  comm_.broadcast(ncol, 0);
-
   // Allocation of local vectors
-  if (comm_.rank() > 0) {
-    colNames.resize(ncol);
-  }
   std::vector<int> timesLoc(6*nobsLoc_);
   std::vector<double> locsLoc(3*nobsLoc_);
-  std::vector<double> colsLoc(ncol*nobsLoc_);
-
-  // Broadcast columns names
-  for (size_t jc = 0; jc < ncol; ++jc) {
-    std::string colName;
-    if (comm_.rank() == 0) {
-      colName = colNames[jc];
-    }
-    oops::mpi::broadcastString(comm_, colName, 0);
-    colNames[jc] = colName;
-  }
 
   // Define counts and displacements
   std::vector<int> timesCounts;
   std::vector<int> locsCounts;
-  std::vector<int> colsCounts;
+  std::vector<int> dataCounts;
   std::vector<int> timesDispls;
   std::vector<int> locsDispls;
-  std::vector<int> colsDispls;
+  std::vector<int> dataDispls;
   for (size_t jt = 0; jt < comm_.size(); ++jt) {
     timesCounts.push_back(6*nobsLocVec_[jt]);
     locsCounts.push_back(3*nobsLocVec_[jt]);
-    colsCounts.push_back(ncol*nobsLocVec_[jt]);
+    dataCounts.push_back(vars_.size()*nobsLocVec_[jt]);
   }
   timesDispls.push_back(0);
   locsDispls.push_back(0);
-  colsDispls.push_back(0);
+  dataDispls.push_back(0);
   for (size_t jt = 0; jt < comm_.size()-1; ++jt) {
     timesDispls.push_back(timesDispls[jt]+timesCounts[jt]);
     locsDispls.push_back(locsDispls[jt]+locsCounts[jt]);
-    colsDispls.push_back(colsDispls[jt]+colsCounts[jt]);
+    dataDispls.push_back(dataDispls[jt]+dataCounts[jt]);
   }
 
-  // Scatter times, locations and data
+  // Scatter times and locations
   comm_.scatterv(timesGlb.begin(), timesGlb.end(), timesCounts, timesDispls,
     timesLoc.begin(), timesLoc.end(), 0);
   comm_.scatterv(locsGlb.begin(), locsGlb.end(), locsCounts, locsDispls,
     locsLoc.begin(), locsLoc.end(), 0);
-  comm_.scatterv(colsGlb.begin(), colsGlb.end(), colsCounts, colsDispls,
-    colsLoc.begin(), colsLoc.end(), 0);
 
-  // Format data
-  colsVec.resize(ncol);
+  // Format local times and locations
   for (size_t jo = 0; jo < nobsLoc_; ++jo) {
     times_.push_back(util::DateTime(timesLoc[6*jo], timesLoc[6*jo+1], timesLoc[6*jo+2],
       timesLoc[6*jo+3], timesLoc[6*jo+4], timesLoc[6*jo+5]));
     locs_.push_back(atlas::Point3(locsLoc[3*jo], locsLoc[3*jo+1], locsLoc[3*jo+2]));
-    for (size_t jc = 0; jc < ncol; ++jc) {
-      colsVec[jc].push_back(colsLoc[ncol*jo+jc]);
+  }
+
+  // Broadcast number of groups
+  comm_.broadcast(ngrp, 0);
+
+  for (int jgrp = 0; jgrp < ngrp; ++jgrp) {
+    // Get group name
+    std::string grpName;
+    size_t grpNameLen = 0;
+    if (comm_.rank() == 0) {
+      if (retval = nc_inq_grpname_len(group_ids[jgrp], &grpNameLen)) ERR(retval);
+      grpName.resize(grpNameLen);
+      if (retval = nc_inq_grpname(group_ids[jgrp], &grpName[0])) ERR(retval);
+    }
+    oops::mpi::broadcastString(comm_, grpName, 0);
+
+    if (grpName.substr(0, grpNameLen-1) != "MetaData") {
+      // Non-MetaData group
+      if (comm_.rank() == 0) {
+        std::vector<float> dataVar(nobsGlb_);
+        dataGlb.resize(vars_.size()*nobsGlb_);
+        for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+          // Get data
+          if (retval = nc_inq_varid(group_ids[jgrp], vars_[jvar].name().c_str(), &data_id))
+            ERR(retval);
+          if (retval = nc_get_var_float(group_ids[jgrp], data_id, dataVar.data())) ERR(retval);
+
+          // Get ordered data
+          std::vector<int> iobsLocVec(comm_.size(), 0);
+          for (size_t jo = 0; jo < nobsGlb_; ++jo) {
+            size_t offset = 0;
+            for (int jt = 0; jt < partition[jo]; ++jt) {
+              offset += nobsLocVec_[jt];
+            }
+            offset += iobsLocVec[partition[jo]];
+            dataGlb[vars_.size()*offset+jvar] = static_cast<double>(dataVar[jo]);
+            ++iobsLocVec[partition[jo]];
+          }
+        }
+      }
+    
+      // Allocation of local vector
+      std::vector<double> dataLoc(vars_.size()*nobsLoc_);
+
+      // Scatter data
+      comm_.scatterv(dataGlb.begin(), dataGlb.end(), dataCounts, dataDispls,
+        dataLoc.begin(), dataLoc.end(), 0);
+
+      // Format data
+      atlas::FieldSet fset;
+      fset.name() = grpName.substr(0, grpNameLen-1);
+      for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+        atlas::Field field(vars_[jvar].name(), atlas::array::make_datatype<double>(),
+          atlas::array::make_shape(nobsLoc_, 1));
+        auto view = atlas::array::make_view<double, 2>(field);
+        for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+          view(jo, 0) = dataLoc[vars_.size()*jo+jvar];
+        }
+        fset.add(field);
+      }
+      data_.push_back(fset);
     }
   }
 
-  // Copy columns to data_
-  for (size_t jc = 0; jc < ncol; ++jc) {
-    ASSERT(data_.find(colNames[jc]) == data_.end());
-    data_.insert(std::pair<std::string, std::vector<double> >(colNames[jc], colsVec[jc]));
+  if (comm_.rank() == 0) {
+    // Close file
+    if (retval = nc_close(ncid)) ERR(retval);
   }
 
   // Add one second if time_ = winbgn_ and  winend_ > winbgn_
@@ -641,9 +673,12 @@ void ObsSpace::write(const std::string & filePath,
                      const bool & writeScreened) const {
   oops::Log::trace() << classname() << "::write starting" << std::endl;
 
+  // TODO NOW
+
+/*
   std::vector<util::DateTime> * times = 0;
   std::vector<atlas::Point3> * locs = 0;
-  std::map<std::string, std::vector<double> > * data = 0;
+  std::vector<atlas::FieldSet> * data = 0;
 
   // Set pointers
   if (writeScreened) {
@@ -890,7 +925,7 @@ void ObsSpace::write(const std::string & filePath,
   times = 0;
   locs = 0;
   data = 0;
-
+*/
   oops::Log::trace() << classname() << "::write done" << std::endl;
 }
 

@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
+
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -48,20 +50,28 @@ class ObsVector : public util::Printable,
   double dot_product_with(const ObsVector &) const;
   double rms() const;
   void mask(const ObsVector &);
+  void sqrt();
 
   size_t size() const
     {return obsSpace_.sizeGlb();}
   size_t sizeLoc() const
     {return obsSpace_.sizeLoc();}
-  double & operator() (const size_t ii)
-    {return data_[ii];}
-  const double & operator() (const size_t ii) const
-    {return data_[ii];}
+  size_t nvars() const
+    {return vars_.size();}
+  void get(const size_t &,
+           const size_t &,
+           double &) const;
+  void set(const size_t &,
+           const size_t &,
+           const double &);
+  const double operator() (const size_t & jvar,
+                           const size_t & jo) const
+    {double value; this->get(jvar, jo, value); return value;}
 
   void read(const std::string & name)
-    {obsSpace_.getdb(name, data_);}
+    {data_.name() = name; obsSpace_.getdb(data_);}
   void save(const std::string & name) const
-    {obsSpace_.putdb(name, data_);}
+    {data_.name() = name; obsSpace_.putdb(data_);}
 
   Eigen::VectorXd packEigen(const ObsVector &) const;
   size_t packEigenSize(const ObsVector &) const;
@@ -71,7 +81,8 @@ class ObsVector : public util::Printable,
 
   const eckit::mpi::Comm & comm_;
   const ObsSpace & obsSpace_;
-  std::vector<double> data_;
+  const Variables & vars_;
+  mutable atlas::FieldSet data_;
   const double missing_;
 };
 
