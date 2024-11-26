@@ -77,6 +77,7 @@ class ObsVector : public util::Printable,
   size_t packEigenSize(const ObsVector &) const;
 
  private:
+  void fillHalo();
   void print(std::ostream &) const;
 
   const eckit::mpi::Comm & comm_;

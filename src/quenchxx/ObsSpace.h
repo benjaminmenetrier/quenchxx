@@ -76,24 +76,29 @@ class ObsSpace : public util::Printable,
   void saveObservations() const {}
 
 
-  const size_t & sizeGlb() const
-    {return nobsGlb_;}
+  const size_t & sizeOwn() const
+    {return nobsOwn_;}
+  const size_t & sizeOwn(const size_t & it) const
+    {return nobsOwnVec_[it];}
   const size_t & sizeLoc() const
     {return nobsLoc_;}
-  const std::vector<size_t> & sizeVec() const
-    {return nobsLocVec_;}
+  const size_t & sizeGlb() const
+    {return nobsGlb_;}
   const std::vector<int> & order() const
     {return order_;}
   const varns::Variables & vars() const
     {return vars_;}
-  std::vector<atlas::Point3> & locations() const // TODO(Benjamin): to remove
+  std::vector<atlas::Point3> & locations() const  // TODO(Benjamin): to remove
     {return locs_;}
+  const eckit::LocalConfiguration & distribution() const
+    {return distribution_;}
 
  private:
   void print(std::ostream &) const;
   void read(const std::string &);
   void write(const std::string &,
              const bool &) const;
+  void fillHalo();
 
   const util::DateTime winbgn_;
   const util::DateTime winend_;
@@ -108,11 +113,13 @@ class ObsSpace : public util::Printable,
   mutable std::vector<atlas::FieldSet> screenedData_;
   std::string nameIn_;
   std::string nameOut_;
+  size_t nobsOwn_;
   size_t nobsLoc_;
   size_t nobsGlb_;
   const varns::Variables vars_;
-  std::vector<size_t> nobsLocVec_;
+  std::vector<size_t> nobsOwnVec_;
   std::vector<int> order_;
+  eckit::LocalConfiguration distribution_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace quenchxx

@@ -37,7 +37,7 @@
         "variables": ["air_temperature"],
         "Generate": {
           "density": "20",
-          "error": "0.1",
+          "error": [0.1],
           "variable": "air_temperature",
           "obserror": "ObsError"
         },

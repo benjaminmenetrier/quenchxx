@@ -64,7 +64,7 @@
             "ObsDataOutScreened": {
               "filepath": "testdata/bgos_obs_linear_ensemble"
             },
-            "obsvalue": "ObsValue.000000"
+            "obsvalue": "ObsValue"
           },
           "Covariance": {
             "ObsErrorCovariance": {
