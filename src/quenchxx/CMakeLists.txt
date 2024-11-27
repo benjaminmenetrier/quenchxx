@@ -6,6 +6,8 @@
 
 list( APPEND quenchxx_src_files
 
+Constants.cc
+Constants.h
 Covariance.h
 Fields.cc
 Fields.h
@@ -29,6 +31,10 @@ State.cc
 State.h
 Traits.h
 TraitsFwd.h
+VaderCookbook.h
+VariableChange.cc
+VariableChange.h
+VariableChangeParameters.h
 
 )
 
@@ -78,16 +84,10 @@ if( ECSABER )
 else()
     list( APPEND quenchxx_src_files
 
-    Constants.cc
-    Constants.h
     LinearVariableChange.cc
     LinearVariableChange.h
     ObsLocalizationJEDI.cc
     ObsLocalizationJEDI.h
-    VaderCookbook.h
-    VariableChange.cc
-    VariableChange.h
-    VariableChangeParameters.h
 
     )
 endif()

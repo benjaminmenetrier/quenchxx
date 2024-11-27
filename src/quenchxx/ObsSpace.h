@@ -73,8 +73,8 @@ class ObsSpace : public util::Printable,
                const ObsVector &);
   void screenObservations(const ObsVector &,
                           const GeoVaLs &) const;
-  void saveObservations() const {}
-
+  void saveObservations() const
+    {}
 
   const size_t & sizeOwn() const
     {return nobsOwn_;}
@@ -88,10 +88,9 @@ class ObsSpace : public util::Printable,
     {return order_;}
   const varns::Variables & vars() const
     {return vars_;}
-  std::vector<atlas::Point3> & locations() const  // TODO(Benjamin): to remove
+  std::vector<atlas::Point3> & locations() const
     {return locs_;}
-  const eckit::LocalConfiguration & distribution() const
-    {return distribution_;}
+  void fillHalo(atlas::FieldSet & fset) const;
 
  private:
   void print(std::ostream &) const;
@@ -120,6 +119,15 @@ class ObsSpace : public util::Printable,
   std::vector<size_t> nobsOwnVec_;
   std::vector<int> order_;
   eckit::LocalConfiguration distribution_;
+  std::vector<int> sendBufIndex_;
+  size_t nSend_;
+  size_t nRecv_;
+  std::vector<int> dataSendCounts_;
+  std::vector<int> dataRecvCounts_;
+  std::vector<int> dataSendDispls_;
+  std::vector<int> dataRecvDispls_;
 };
+
 // -----------------------------------------------------------------------------
+
 }  // namespace quenchxx

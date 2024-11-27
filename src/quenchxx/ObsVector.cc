@@ -244,7 +244,17 @@ void ObsVector::random() {
 double ObsVector::dot_product_with(const ObsVector & other) const {
   oops::Log::trace() << classname() << "::dot_product_with starting" << std::endl;
 
-  double zz = util::dotProductFieldSets(data_, other.data_, vars_.variables(), comm_);
+  double zz = 0;
+  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+    const atlas::Field field = data_[vars_[jvar].name()];
+    const auto view = atlas::array::make_view<double, 2>(field);
+    const atlas::Field otherField = other.data_[vars_[jvar].name()];
+    const auto otherView = atlas::array::make_view<double, 2>(otherField);
+    for (size_t jo = 0; jo < obsSpace_.sizeOwn(); ++jo) {
+      zz += view(jo, 0)*otherView(jo, 0);
+    }
+  }
+  comm_.allReduceInPlace(zz, eckit::mpi::sum());
 
   oops::Log::trace() << classname() << "::dot_product_with done" << std::endl;
   return zz;
@@ -364,9 +374,7 @@ size_t ObsVector::packEigenSize(const ObsVector & mask) const {
 void ObsVector::fillHalo() {
   oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
 
-  if (!obsSpace_.distribution().empty()) {
-    throw eckit::NotImplemented("toto", Here());
-  }
+  obsSpace_.fillHalo(data_);
 
   oops::Log::trace() << classname() << "::fillHalo done" << std::endl;
 }
@@ -400,9 +408,11 @@ void ObsVector::print(std::ostream & os) const {
     }
   }
 
-  os << "quenchxx[" << obsSpace_.sizeGlb() << "]: Min=" << zmin[0] << ", Max=" << zmax[0]
-    << ", Average=" << zavg[0];
-  // TODO(Benjamin): print all variables
+  os << "quenchxx[" << obsSpace_.sizeGlb() << "]:" << std::endl;
+  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+    os << "- " << vars_[jvar].name() << ": Min=" << zmin[0] << ", Max=" << zmax[0]
+      << ", Average=" << zavg[0];
+  }
 
   oops::Log::trace() << classname() << "::print done" << std::endl;
 }

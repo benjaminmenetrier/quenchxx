@@ -17,6 +17,14 @@
 
 #include "quenchxx/ObsSpace.h"
 
+#ifdef ECSABER
+#include "quenchxx/Variables.h"
+namespace varns = quenchxx;
+#else
+#include "oops/base/Variables.h"
+namespace varns = oops;
+#endif
+
 namespace quenchxx {
 
 // -----------------------------------------------------------------------------
@@ -82,7 +90,7 @@ class ObsVector : public util::Printable,
 
   const eckit::mpi::Comm & comm_;
   const ObsSpace & obsSpace_;
-  const Variables & vars_;
+  const varns::Variables & vars_;
   mutable atlas::FieldSet data_;
   const double missing_;
 };

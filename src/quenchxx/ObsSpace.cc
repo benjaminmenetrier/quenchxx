@@ -57,6 +57,16 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   nameOut_.clear();
   if (config.has("ObsData")) {
     const eckit::LocalConfiguration dataConfig(config, "ObsData");
+    if (dataConfig.has("distribution")) {
+      distribution_ = dataConfig.getSubConfiguration("distribution");
+      if (config.has("obs localizations")) {
+        const std::vector<eckit::LocalConfiguration> configs =
+          config.getSubConfigurations("obs localizations");
+        ASSERT(configs.size() == 1);  // No use for more than one localization so far
+        const double horLengthScale = configs[0].getDouble("horizontal length-scale");
+        distribution_.set("horizontal length-scale", horLengthScale);
+      }
+    }
     if (lscreened) {
       if (dataConfig.has("ObsDataInScreened")) {
         nameIn_ = dataConfig.getString("ObsDataInScreened.filepath");
@@ -76,9 +86,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
       }
       if (dataConfig.has("ObsDataOut")) {
         nameOut_ = dataConfig.getString("ObsDataOut.filepath");
-      }
-      if (dataConfig.has("distribution")) {
-        distribution_ = dataConfig.getSubConfiguration("distribution");
       }
     }
   }
@@ -296,18 +303,18 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
     // Reorder vectors
     locsGlb.resize(3*nobsGlb_);
     order_.resize(nobsGlb_);
-    std::vector<int> iobsLocVec(comm_.size(), 0);
+    std::vector<int> iobsOwnVec(comm_.size(), 0);
     for (size_t jo = 0; jo < nobsGlb_; ++jo) {
       size_t offset = 0;
       for (int jt = 0; jt < partition[jo]; ++jt) {
         offset += nobsOwnVec_[jt];
       }
-      offset += iobsLocVec[partition[jo]];
+      offset += iobsOwnVec[partition[jo]];
       locsGlb[3*offset+0] = locsGlbTmp[3*jo+0];
       locsGlb[3*offset+1] = locsGlbTmp[3*jo+1];
       locsGlb[3*offset+2] = locsGlbTmp[3*jo+2];
       order_[offset] = orderGlbTmp[jo];
-      ++iobsLocVec[partition[jo]];
+      ++iobsOwnVec[partition[jo]];
     }
   }
 
@@ -316,7 +323,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   nobsOwn_ = nobsOwnVec_[comm_.rank()];
 
   // Allocation of local vector
-  std::vector<double> locsLoc(3*nobsOwn_);
+  std::vector<double> locsOwn(3*nobsOwn_);
 
   // Define counts and displacements
   std::vector<int> locsCounts;
@@ -331,11 +338,11 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
 
   // Scatter locations
   comm_.scatterv(locsGlb.begin(), locsGlb.end(), locsCounts, locsDispls,
-    locsLoc.begin(), locsLoc.end(), 0);
+    locsOwn.begin(), locsOwn.end(), 0);
 
   // Format data
   for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-    locs_.push_back(atlas::Point3(locsLoc[3*jo], locsLoc[3*jo+1], locsLoc[3*jo+2]));
+    locs_.push_back(atlas::Point3(locsOwn[3*jo], locsOwn[3*jo+1], locsOwn[3*jo+2]));
   }
 
   // Generate times
@@ -356,6 +363,9 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
     }
     fset.add(field);
   }
+
+  // Save FieldSet
+  nobsLoc_ = nobsOwn_;
   this->putdb(fset);
 
   // Fill halo
@@ -535,20 +545,20 @@ void ObsSpace::read(const std::string & filePath) {
     // Get ordered time and location
     timesGlb.resize(6*nobsGlb_);
     locsGlb.resize(3*nobsGlb_);
-    std::vector<int> iobsLocVec(comm_.size(), 0);
+    std::vector<int> iobsOwnVec(comm_.size(), 0);
     for (size_t jo = 0; jo < nobsGlb_; ++jo) {
       size_t offset = 0;
       for (int jt = 0; jt < partition[jo]; ++jt) {
         offset += nobsOwnVec_[jt];
       }
-      offset += iobsLocVec[partition[jo]];
+      offset += iobsOwnVec[partition[jo]];
       util::DateTime startTest = start + util::Duration(dateTime[jo]);
       startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
         timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
       locsGlb[3*offset+0] = static_cast<double>(longitude[jo]);
       locsGlb[3*offset+1] = static_cast<double>(latitude[jo]);
       locsGlb[3*offset+2] = static_cast<double>(height[jo]);
-      ++iobsLocVec[partition[jo]];
+      ++iobsOwnVec[partition[jo]];
     }
   }
 
@@ -561,8 +571,8 @@ void ObsSpace::read(const std::string & filePath) {
   }
 
   // Allocation of local vectors
-  std::vector<int> timesLoc(6*nobsOwn_);
-  std::vector<double> locsLoc(3*nobsOwn_);
+  std::vector<int> timesOwn(6*nobsOwn_);
+  std::vector<double> locsOwn(3*nobsOwn_);
 
   // Define counts and displacements
   std::vector<int> timesCounts;
@@ -587,15 +597,15 @@ void ObsSpace::read(const std::string & filePath) {
 
   // Scatter times and locations
   comm_.scatterv(timesGlb.begin(), timesGlb.end(), timesCounts, timesDispls,
-    timesLoc.begin(), timesLoc.end(), 0);
+    timesOwn.begin(), timesOwn.end(), 0);
   comm_.scatterv(locsGlb.begin(), locsGlb.end(), locsCounts, locsDispls,
-    locsLoc.begin(), locsLoc.end(), 0);
+    locsOwn.begin(), locsOwn.end(), 0);
 
   // Format local times and locations
   for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-    times_.push_back(util::DateTime(timesLoc[6*jo], timesLoc[6*jo+1], timesLoc[6*jo+2],
-      timesLoc[6*jo+3], timesLoc[6*jo+4], timesLoc[6*jo+5]));
-    locs_.push_back(atlas::Point3(locsLoc[3*jo], locsLoc[3*jo+1], locsLoc[3*jo+2]));
+    times_.push_back(util::DateTime(timesOwn[6*jo], timesOwn[6*jo+1], timesOwn[6*jo+2],
+      timesOwn[6*jo+3], timesOwn[6*jo+4], timesOwn[6*jo+5]));
+    locs_.push_back(atlas::Point3(locsOwn[3*jo], locsOwn[3*jo+1], locsOwn[3*jo+2]));
   }
 
   // Broadcast number of groups
@@ -624,25 +634,25 @@ void ObsSpace::read(const std::string & filePath) {
           if (retval = nc_get_var_float(group_ids[jgrp], data_id, dataVar.data())) ERR(retval);
 
           // Get ordered data
-          std::vector<int> iobsLocVec(comm_.size(), 0);
+          std::vector<int> iobsOwnVec(comm_.size(), 0);
           for (size_t jo = 0; jo < nobsGlb_; ++jo) {
             size_t offset = 0;
             for (int jt = 0; jt < partition[jo]; ++jt) {
               offset += nobsOwnVec_[jt];
             }
-            offset += iobsLocVec[partition[jo]];
+            offset += iobsOwnVec[partition[jo]];
             dataGlb[vars_.size()*offset+jvar] = static_cast<double>(dataVar[jo]);
-            ++iobsLocVec[partition[jo]];
+            ++iobsOwnVec[partition[jo]];
           }
         }
       }
 
       // Allocation of local vector
-      std::vector<double> dataLoc(vars_.size()*nobsOwn_);
+      std::vector<double> dataOwn(vars_.size()*nobsOwn_);
 
       // Scatter data
       comm_.scatterv(dataGlb.begin(), dataGlb.end(), dataCounts, dataDispls,
-        dataLoc.begin(), dataLoc.end(), 0);
+        dataOwn.begin(), dataOwn.end(), 0);
 
       // Format data
       atlas::FieldSet fset;
@@ -652,7 +662,7 @@ void ObsSpace::read(const std::string & filePath) {
           atlas::array::make_shape(nobsOwn_, 1));
         auto view = atlas::array::make_view<double, 2>(field);
         for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-          view(jo, 0) = dataLoc[jo*vars_.size()+jvar];
+          view(jo, 0) = dataOwn[jo*vars_.size()+jvar];
         }
         fset.add(field);
       }
@@ -719,9 +729,9 @@ void ObsSpace::write(const std::string & filePath,
   }
 
   // Allocation of local vectors
-  std::vector<int> timesLoc(6*nobsOwn_);
-  std::vector<double> locsLoc(3*nobsOwn_);
-  std::vector<double> dataLoc(vars_.size()*nobsOwn_);
+  std::vector<int> timesOwn(6*nobsOwn_);
+  std::vector<double> locsOwn(3*nobsOwn_);
+  std::vector<double> dataOwn(vars_.size()*nobsOwn_);
 
   // Define counts and displacements
   std::vector<int> timesCounts;
@@ -746,16 +756,16 @@ void ObsSpace::write(const std::string & filePath,
 
   // Format time and location
   for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-    (*times)[jo].toYYYYMMDDhhmmss(timesLoc[6*jo], timesLoc[6*jo+1], timesLoc[6*jo+2],
-      timesLoc[6*jo+3], timesLoc[6*jo+4], timesLoc[6*jo+5]);
-    locsLoc[3*jo+0] = (*locs)[jo][0];
-    locsLoc[3*jo+1] = (*locs)[jo][1];
-    locsLoc[3*jo+2] = (*locs)[jo][2];
+    (*times)[jo].toYYYYMMDDhhmmss(timesOwn[6*jo], timesOwn[6*jo+1], timesOwn[6*jo+2],
+      timesOwn[6*jo+3], timesOwn[6*jo+4], timesOwn[6*jo+5]);
+    locsOwn[3*jo+0] = (*locs)[jo][0];
+    locsOwn[3*jo+1] = (*locs)[jo][1];
+    locsOwn[3*jo+2] = (*locs)[jo][2];
   }
 
   // Gather times, locations and data
-  comm_.gatherv(timesLoc, timesGlb, timesCounts, timesDispls, 0);
-  comm_.gatherv(locsLoc, locsGlb, locsCounts, locsDispls, 0);
+  comm_.gatherv(timesOwn, timesGlb, timesCounts, timesDispls, 0);
+  comm_.gatherv(locsOwn, locsGlb, locsCounts, locsDispls, 0);
 
   // NetCDF IDs
   int retval, ncid, nobs_id, d_id[1], Locations_id, order_id, metaData_id, dateTime_id,
@@ -916,12 +926,12 @@ void ObsSpace::write(const std::string & filePath,
       const atlas::Field field = fset[vars_[jvar].name()];
       const auto view = atlas::array::make_view<double, 2>(field);
       for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-        dataLoc[jo*vars_.size()+jvar] = view(jo, 0);
+        dataOwn[jo*vars_.size()+jvar] = view(jo, 0);
       }
     }
 
     // Gather data
-    comm_.gatherv(dataLoc, dataGlb, dataCounts, dataDispls, 0);
+    comm_.gatherv(dataOwn, dataGlb, dataCounts, dataDispls, 0);
 
     if (comm_.rank() == 0) {
       // Write data
@@ -954,17 +964,168 @@ void ObsSpace::write(const std::string & filePath,
 
 void ObsSpace::fillHalo() {
   oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
-  std::cout << distribution_ << std::endl;
-  std::abort();
+
   if (distribution_.empty()) {
     // No halo
     nobsLoc_ = nobsOwn_;
   } else {
-    // Define halo
+    // Get center, radius and length-scale
     const std::vector<double> center = distribution_.getDoubleVector("center");
     const double radius = distribution_.getDouble("radius");
+    const double horLengthScale = distribution_.getDouble("horizontal length-scale");
 
-    throw eckit::NotImplemented("toto", Here());
+    // Allgather center and radius
+    std::vector<double> centerLonVec(comm_.size());
+    std::vector<double> centerLatVec(comm_.size());
+    std::vector<double> radiusVec(comm_.size());
+    comm_.allGather(center[0], centerLonVec.begin(), centerLonVec.end());
+    comm_.allGather(center[1], centerLatVec.begin(), centerLatVec.end());
+    comm_.allGather(radius, radiusVec.begin(), radiusVec.end());
+
+    // Prepare send buffer index
+    std::vector<int> sendCounts(comm_.size(), 0);
+    for (size_t jt = 0; jt < comm_.size(); ++jt) {
+      if (jt != comm_.rank()) {
+        const atlas::PointLonLat centerPoint({centerLonVec[jt], centerLatVec[jt]});
+        const double haloSize = radiusVec[jt]+horLengthScale;
+
+        for (size_t jo = 0; jo < nobsOwn_; ++jo) {
+          // Compute distance to task center
+          const atlas::PointLonLat obsPoint({locs_[jo][0], locs_[jo][1]});
+          const double dist = atlas::util::Earth().distance(centerPoint, obsPoint);
+          if (dist <= haloSize) {
+            sendBufIndex_.push_back(jo);
+            ++sendCounts[jt];
+          }
+        }
+      }
+    }
+    nSend_ = sendBufIndex_.size();
+
+    // Communicate sendCounts to get recvCounts
+    std::vector<int> recvCounts(comm_.size());
+    std::vector<int> tmpCounts(comm_.size(), 1);
+    std::vector<int> tmpDispls;
+    tmpDispls.push_back(0);
+    for (size_t jt = 0; jt < comm_.size()-1; ++jt) {
+      tmpDispls.push_back(tmpDispls[jt]+tmpCounts[jt]);
+    }
+    comm_.allToAllv(sendCounts.data(), tmpCounts.data(), tmpDispls.data(), recvCounts.data(),
+      tmpCounts.data(), tmpDispls.data());
+
+    // Number of received observations, local number of observations
+    nRecv_ = 0;
+    for (const auto & item : recvCounts) {
+      nRecv_ += item;
+    }
+    nobsLoc_ = nobsOwn_+nRecv_;
+
+    // Define displs
+    std::vector<int> sendDispls;
+    std::vector<int> recvDispls;
+    sendDispls.push_back(0);
+    recvDispls.push_back(0);
+    for (size_t jt = 0; jt < comm_.size()-1; ++jt) {
+      sendDispls.push_back(sendDispls[jt]+sendCounts[jt]);
+      recvDispls.push_back(recvDispls[jt]+recvCounts[jt]);
+    }
+
+    // Prepare counts and displs for time, locations and data
+    std::vector<int> timeSendCounts(comm_.size());
+    std::vector<int> timeRecvCounts(comm_.size());
+    std::vector<int> timeSendDispls(comm_.size());
+    std::vector<int> timeRecvDispls(comm_.size());
+    std::vector<int> locsSendCounts(comm_.size());
+    std::vector<int> locsRecvCounts(comm_.size());
+    std::vector<int> locsSendDispls(comm_.size());
+    std::vector<int> locsRecvDispls(comm_.size());
+    dataSendCounts_.resize(comm_.size());
+    dataRecvCounts_.resize(comm_.size());
+    dataSendDispls_.resize(comm_.size());
+    dataRecvDispls_.resize(comm_.size());
+    for (size_t jt = 0; jt < comm_.size(); ++jt) {
+      timeSendCounts[jt] = 6*sendCounts[jt];
+      timeRecvCounts[jt] = 6*recvCounts[jt];
+      timeSendDispls[jt] = 6*sendDispls[jt];
+      timeRecvDispls[jt] = 6*recvDispls[jt];
+      locsSendCounts[jt] = 3*sendCounts[jt];
+      locsRecvCounts[jt] = 3*recvCounts[jt];
+      locsSendDispls[jt] = 3*sendDispls[jt];
+      locsRecvDispls[jt] = 3*recvDispls[jt];
+      dataSendCounts_[jt] = vars_.size()*sendCounts[jt];
+      dataRecvCounts_[jt] = vars_.size()*recvCounts[jt];
+      dataSendDispls_[jt] = vars_.size()*sendDispls[jt];
+      dataRecvDispls_[jt] = vars_.size()*recvDispls[jt];
+    }
+
+    // Format time and locations
+    std::vector<int> timeSendBuf(6*nSend_);
+    std::vector<double> locsSendBuf(3*nSend_);
+    for (size_t jj = 0; jj < nSend_; ++jj) {
+      size_t jo = sendBufIndex_[jj];
+      times_[jo].toYYYYMMDDhhmmss(timeSendBuf[6*jj], timeSendBuf[6*jj+1], timeSendBuf[6*jj+2],
+        timeSendBuf[6*jj+3], timeSendBuf[6*jj+4], timeSendBuf[6*jj+5]);
+      locsSendBuf[3*jj+0] = locs_[jo][0];
+      locsSendBuf[3*jj+1] = locs_[jo][1];
+      locsSendBuf[3*jj+2] = locs_[jo][2];
+    }
+
+    // Communicate time and locations
+    std::vector<int> timeRecvBuf(6*nRecv_);
+    std::vector<double> locsRecvBuf(3*nRecv_);
+    comm_.allToAllv(timeSendBuf.data(), timeSendCounts.data(), timeSendDispls.data(),
+      timeRecvBuf.data(), timeRecvCounts.data(), timeRecvDispls.data());
+    comm_.allToAllv(locsSendBuf.data(), locsSendCounts.data(), locsSendDispls.data(),
+      locsRecvBuf.data(), locsRecvCounts.data(), locsRecvDispls.data());
+
+    // Append halo to owned time and locations
+    for (size_t jj = 0; jj < nRecv_; ++jj) {
+      times_.push_back(util::DateTime(timeRecvBuf[6*jj], timeRecvBuf[6*jj+1], timeRecvBuf[6*jj+2],
+        timeRecvBuf[6*jj+3], timeRecvBuf[6*jj+4], timeRecvBuf[6*jj+5]));
+      locs_.push_back(atlas::Point3(locsRecvBuf[3*jj], locsRecvBuf[3*jj+1], locsRecvBuf[3*jj+2]));
+    }
+
+    for (auto & fset : data_) {
+      // Fill halo of FieldSet
+      this->fillHalo(fset);
+    }
+  }
+
+  oops::Log::trace() << classname() << "::fillHalo done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
+  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
+
+  if (!distribution_.empty()) {
+    // Format data
+    std::vector<double> dataSendBuf(vars_.size()*nSend_);
+    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+      const atlas::Field field = fset[vars_[jvar].name()];
+      ASSERT(field.shape(0) == nobsOwn_);
+      const auto view = atlas::array::make_view<double, 2>(field);
+      for (size_t jj = 0; jj < nSend_; ++jj) {
+        size_t jo = sendBufIndex_[jj];
+        dataSendBuf[vars_.size()*jj+jvar] = view(jo, 0);
+      }
+    }
+
+    // Communicate time and locations
+    std::vector<double> dataRecvBuf(vars_.size()*nRecv_);
+    comm_.allToAllv(dataSendBuf.data(), dataSendCounts_.data(), dataSendDispls_.data(),
+      dataRecvBuf.data(), dataRecvCounts_.data(), dataRecvDispls_.data());
+
+    // Append halo to owned data
+    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+      atlas::Field field = fset[vars_[jvar].name()];
+      field.resize(atlas::array::make_shape(nobsLoc_, 1));
+      auto view = atlas::array::make_view<double, 2>(field);
+      for (size_t jj = 0; jj < nRecv_; ++jj) {
+        view(nobsOwn_+jj, 0) = dataRecvBuf[vars_.size()*jj+jvar];
+      }
+    }
   }
 
   oops::Log::trace() << classname() << "::fillHalo done" << std::endl;

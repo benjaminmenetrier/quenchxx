@@ -51,16 +51,16 @@ ecbuild_add_executable( TARGET  quenchxx_letkf.x
                         LIBS    ${libs} )
 
 if( ECSABER )
-    ecbuild_add_executable( TARGET  quenchxx_makeobs.x
-                            SOURCES ${version}/quenchxxMakeObs.cc
+    ecbuild_add_executable( TARGET  quenchxx_makeobs_patched.x
+                            SOURCES ${version}/quenchxxMakeObsPatched.cc
                             LIBS    ${libs} )
 
     ecbuild_add_executable( TARGET  quenchxx_evil_update.x
                             SOURCES ${version}/quenchxxEvilUpdate.cc
                             LIBS    ${libs} )
 
-    ecbuild_add_executable( TARGET  quenchxx_assim_ensemble.x
-                            SOURCES ${version}/quenchxxAssimEnsemble.cc
+    ecbuild_add_executable( TARGET  quenchxx_assim_ensemble_patched.x
+                            SOURCES ${version}/quenchxxAssimEnsemblePatched.cc
                             LIBS    ${libs} )
 
 

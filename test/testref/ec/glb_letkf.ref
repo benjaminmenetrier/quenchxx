@@ -179,29 +179,41 @@ Groups:
 Fields:
   air_temperature: 40.1847
 H(x) for member 1:
-quenchxx[20]: Min=0.604832, Max=1.30938, Average=0.977224
+quenchxx[20]:
+- air_temperature: Min=0.604832, Max=1.30938, Average=0.977224
 H(x) for member 2:
-quenchxx[20]: Min=0.762116, Max=1.23072, Average=1.00697
+quenchxx[20]:
+- air_temperature: Min=0.762116, Max=1.23072, Average=1.00697
 H(x) for member 3:
-quenchxx[20]: Min=0.726348, Max=1.21619, Average=0.990532
+quenchxx[20]:
+- air_temperature: Min=0.726348, Max=1.21619, Average=0.990532
 H(x) for member 4:
-quenchxx[20]: Min=0.670882, Max=1.23107, Average=0.988619
+quenchxx[20]:
+- air_temperature: Min=0.670882, Max=1.23107, Average=0.988619
 H(x) for member 5:
-quenchxx[20]: Min=0.752622, Max=1.23451, Average=1.02046
+quenchxx[20]:
+- air_temperature: Min=0.752622, Max=1.23451, Average=1.02046
 H(x) for member 6:
-quenchxx[20]: Min=0.754036, Max=1.27192, Average=1.02638
+quenchxx[20]:
+- air_temperature: Min=0.754036, Max=1.27192, Average=1.02638
 H(x) for member 7:
-quenchxx[20]: Min=0.753346, Max=1.17885, Average=0.99285
+quenchxx[20]:
+- air_temperature: Min=0.753346, Max=1.17885, Average=0.99285
 H(x) for member 8:
-quenchxx[20]: Min=0.778962, Max=1.19426, Average=0.991278
+quenchxx[20]:
+- air_temperature: Min=0.778962, Max=1.19426, Average=0.991278
 H(x) for member 9:
-quenchxx[20]: Min=0.740818, Max=1.19197, Average=0.972145
+quenchxx[20]:
+- air_temperature: Min=0.740818, Max=1.19197, Average=0.972145
 H(x) for member 10:
-quenchxx[20]: Min=0.719333, Max=1.18233, Average=0.962185
+quenchxx[20]:
+- air_temperature: Min=0.719333, Max=1.18233, Average=0.962185
 H(x) ensemble background mean: 
-quenchxx[20]: Min=0.760253, Max=1.18555, Average=0.992863
+quenchxx[20]:
+- air_temperature: Min=0.760253, Max=1.18555, Average=0.992863
 background y - H(x): 
-quenchxx[20]: Min=-0.399772, Max=0.227834, Average=0.0227486
+quenchxx[20]:
+- air_temperature: Min=-0.399772, Max=0.227834, Average=0.0227486
 Background mean :
 Valid time:2010-01-01T12:00:00Z
 Quench geometry grid:
@@ -293,28 +305,40 @@ Groups:
 Fields:
   air_temperature: 0.437508
 H(x) for member 1:
-quenchxx[20]: Min=0.608474, Max=1.19239, Average=0.977167
+quenchxx[20]:
+- air_temperature: Min=0.608474, Max=1.19239, Average=0.977167
 H(x) for member 2:
-quenchxx[20]: Min=0.754122, Max=1.1891, Average=1.00686
+quenchxx[20]:
+- air_temperature: Min=0.754122, Max=1.1891, Average=1.00686
 H(x) for member 3:
-quenchxx[20]: Min=0.731182, Max=1.23491, Average=0.990698
+quenchxx[20]:
+- air_temperature: Min=0.731182, Max=1.23491, Average=0.990698
 H(x) for member 4:
-quenchxx[20]: Min=0.681476, Max=1.22818, Average=0.988499
+quenchxx[20]:
+- air_temperature: Min=0.681476, Max=1.22818, Average=0.988499
 H(x) for member 5:
-quenchxx[20]: Min=0.756847, Max=1.211, Average=1.01944
+quenchxx[20]:
+- air_temperature: Min=0.756847, Max=1.211, Average=1.01944
 H(x) for member 6:
-quenchxx[20]: Min=0.758284, Max=1.17623, Average=1.02497
+quenchxx[20]:
+- air_temperature: Min=0.758284, Max=1.17623, Average=1.02497
 H(x) for member 7:
-quenchxx[20]: Min=0.758445, Max=1.09047, Average=0.992929
+quenchxx[20]:
+- air_temperature: Min=0.758445, Max=1.09047, Average=0.992929
 H(x) for member 8:
-quenchxx[20]: Min=0.776056, Max=1.21307, Average=0.990998
+quenchxx[20]:
+- air_temperature: Min=0.776056, Max=1.21307, Average=0.990998
 H(x) for member 9:
-quenchxx[20]: Min=0.738006, Max=1.19071, Average=0.972343
+quenchxx[20]:
+- air_temperature: Min=0.738006, Max=1.19071, Average=0.972343
 H(x) for member 10:
-quenchxx[20]: Min=0.723043, Max=1.20092, Average=0.963393
+quenchxx[20]:
+- air_temperature: Min=0.723043, Max=1.20092, Average=0.963393
 H(x) ensemble analysis mean: 
-quenchxx[20]: Min=0.765419, Max=1.12698, Average=0.99273
+quenchxx[20]:
+- air_temperature: Min=0.765419, Max=1.12698, Average=0.99273
 analysis y - H(x): 
-quenchxx[20]: Min=-0.23053, Max=0.207964, Average=0.0228819
+quenchxx[20]:
+- air_temperature: Min=-0.23053, Max=0.207964, Average=0.0228819
 ombg RMS: 0.638136
 oman RMS: 0.473144

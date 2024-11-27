@@ -7,7 +7,7 @@
     },
     "groups": [
       {
-        "variables": ["air_temperature", "geopotential_height"],
+        "variables": ["air_temperature"],
         "levels": "2"
       }
     ],
@@ -21,7 +21,7 @@
     },
     "groups": [
       {
-        "variables": ["air_temperature", "geopotential_height"],
+        "variables": ["air_temperature"],
         "levels": "2"
       }
     ],
@@ -30,7 +30,7 @@
   "states": [{
     "input": {
       "date": "2010-01-01T06:00:00Z",
-        "variables": ["air_temperature", "geopotential_height"],
+        "variables": ["air_temperature"],
       "constant profile": ["0.8","1.0"]
     },
     "output": {
