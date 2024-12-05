@@ -54,7 +54,7 @@
         }
       }
     }],
-    "randomization size": "50"
+    "randomization size": "10"
   },
   "output states": {
     "filepath": "testdata/glb_ens_18",

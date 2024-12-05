@@ -395,6 +395,18 @@ std::vector<size_t> Geometry::variableSizes(const varns::Variables & vars) const
 
 // -----------------------------------------------------------------------------
 
+std::vector<size_t> Geometry::variableSizes(const std::vector<std::string> & varNames) const {
+  oops::Log::trace() << classname() << "::variableSizes starting" << std::endl;
+
+  // Create variables
+  const varns::Variables vars(varNames);
+
+  oops::Log::trace() << classname() << "::variableSizes done" << std::endl;
+  return variableSizes(vars);
+}
+
+// -----------------------------------------------------------------------------
+
 void Geometry::print(std::ostream & os) const {
   oops::Log::trace() << classname() << "::print starting" << std::endl;
 

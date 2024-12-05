@@ -1,5 +1,5 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h.tmp.bak	2024-11-27 13:23:55.468743274 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h	2024-11-27 12:09:28.401547968 +0100
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h.tmp.bak	2024-12-03 11:28:36.412432984 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h	2024-12-03 10:58:31.716032582 +0100
 @@ -19,7 +19,6 @@
  
  #include "eckit/mpi/Comm.h"
@@ -8,17 +8,11 @@
  #include "oops/mpi/mpi.h"
  #include "oops/util/ObjectCounter.h"
  #include "oops/util/parameters/OptionalParameter.h"
-@@ -28,11 +27,20 @@
+@@ -28,11 +27,14 @@
  #include "oops/util/parameters/RequiredParameter.h"
  #include "oops/util/Printable.h"
  
-+#ifdef ECSABER
-+#include "quenchxx/Variables.h"
-+namespace varns = quenchxx;
-+#else
-+#include "oops/base/Variables.h"
-+namespace varns = oops;
-+#endif
++#include "quenchxx/VariablesSwitch.h"
 +
  namespace eckit {
    class Configuration;
@@ -29,16 +23,17 @@
  
  // -----------------------------------------------------------------------------
  /// Orography parameters
-@@ -171,7 +179,7 @@
+@@ -171,7 +173,8 @@
    Geometry(const Geometry &);
  
    // Variables sizes
 -  std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 +  std::vector<size_t> variableSizes(const varns::Variables & vars) const;
++  std::vector<size_t> variableSizes(const std::vector<std::string> &) const;
  
    // Levels direction
    bool levelsAreTopDown() const
-@@ -212,6 +220,21 @@
+@@ -212,6 +215,21 @@
      {return interpolation_;}
    bool duplicatePoints() const
      {return duplicatePoints_;}
@@ -60,7 +55,7 @@
  
   private:
    // Print
-@@ -279,6 +302,12 @@
+@@ -279,6 +297,12 @@
  
    // Duplicate points
    bool duplicatePoints_;

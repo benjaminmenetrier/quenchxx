@@ -27,13 +27,7 @@
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
-#ifdef ECSABER
-#include "quenchxx/Variables.h"
-namespace varns = quenchxx;
-#else
-#include "oops/base/Variables.h"
-namespace varns = oops;
-#endif
+#include "quenchxx/VariablesSwitch.h"
 
 namespace eckit {
   class Configuration;
@@ -180,6 +174,7 @@ class Geometry : public util::Printable,
 
   // Variables sizes
   std::vector<size_t> variableSizes(const varns::Variables & vars) const;
+  std::vector<size_t> variableSizes(const std::vector<std::string> &) const;
 
   // Levels direction
   bool levelsAreTopDown() const

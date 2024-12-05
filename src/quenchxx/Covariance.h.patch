@@ -1,20 +1,15 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Covariance.h.tmp	2024-11-27 13:23:55.519743530 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Covariance.h	2024-11-26 14:58:10.121932573 +0100
-@@ -19,6 +19,13 @@
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Covariance.h.tmp.bak	2024-12-02 16:43:56.018708481 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Covariance.h	2024-12-02 13:09:39.973202089 +0100
+@@ -19,6 +19,8 @@
  #include "oops/util/Printable.h"
  
  #include "quenchxx/Increment.h"
 +#include "quenchxx/IncrModCtlVec.h"
-+
-+#ifdef ECSABER
-+namespace varns = quenchxx;
-+#else
-+namespace varns = oops;
-+#endif
++#include "quenchxx/VariablesSwitch.h"
  
  namespace quenchxx {
    class Geometry;
-@@ -36,21 +43,39 @@
+@@ -36,21 +38,39 @@
  
    // Constructor/destructor
    Covariance(const Geometry &,

@@ -1,5 +1,5 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.cc.tmp.bak	2024-11-27 13:23:55.510743485 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.cc	2024-11-27 12:10:12.971776727 +0100
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.cc.tmp.bak	2024-12-03 11:28:36.461433211 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.cc	2024-12-03 11:00:40.476556244 +0100
 @@ -30,6 +30,7 @@
  #include "oops/util/Logger.h"
  
@@ -70,7 +70,26 @@
    oops::Log::trace() << classname() << "::variableSizes starting" << std::endl;
  
    std::vector<size_t> sizes;
-@@ -535,5 +564,23 @@
+@@ -366,6 +395,18 @@
+ 
+ // -----------------------------------------------------------------------------
+ 
++std::vector<size_t> Geometry::variableSizes(const std::vector<std::string> & varNames) const {
++  oops::Log::trace() << classname() << "::variableSizes starting" << std::endl;
++
++  // Create variables
++  const varns::Variables vars(varNames);
++
++  oops::Log::trace() << classname() << "::variableSizes done" << std::endl;
++  return variableSizes(vars);
++}
++
++// -----------------------------------------------------------------------------
++
+ void Geometry::print(std::ostream & os) const {
+   oops::Log::trace() << classname() << "::print starting" << std::endl;
+ 
+@@ -535,5 +576,23 @@
  }
  
  // -----------------------------------------------------------------------------

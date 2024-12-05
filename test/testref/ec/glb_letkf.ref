@@ -1,5 +1,5 @@
 Initial state for member 1:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -17,7 +17,7 @@ Groups:
 Fields:
   air_temperature: 41.9408
 Initial state for member 2:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -35,7 +35,7 @@ Groups:
 Fields:
   air_temperature: 41.366
 Initial state for member 3:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -53,7 +53,7 @@ Groups:
 Fields:
   air_temperature: 41.7862
 Initial state for member 4:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -71,7 +71,7 @@ Groups:
 Fields:
   air_temperature: 42.0226
 Initial state for member 5:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -89,7 +89,7 @@ Groups:
 Fields:
   air_temperature: 41.9789
 Initial state for member 6:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -107,7 +107,7 @@ Groups:
 Fields:
   air_temperature: 42.456
 Initial state for member 7:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -125,7 +125,7 @@ Groups:
 Fields:
   air_temperature: 41.3318
 Initial state for member 8:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -143,7 +143,7 @@ Groups:
 Fields:
   air_temperature: 40.867
 Initial state for member 9:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -161,7 +161,7 @@ Groups:
 Fields:
   air_temperature: 40.7544
 Initial state for member 10:
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -179,43 +179,43 @@ Groups:
 Fields:
   air_temperature: 40.1847
 H(x) for member 1:
-quenchxx[20]:
-- air_temperature: Min=0.604832, Max=1.30938, Average=0.977224
+quenchxx[30]:
+- air_temperature: Min=0.625914, Max=1.24538, Average=0.942816
 H(x) for member 2:
-quenchxx[20]:
-- air_temperature: Min=0.762116, Max=1.23072, Average=1.00697
+quenchxx[30]:
+- air_temperature: Min=0.837387, Max=1.25503, Average=0.969529
 H(x) for member 3:
-quenchxx[20]:
-- air_temperature: Min=0.726348, Max=1.21619, Average=0.990532
+quenchxx[30]:
+- air_temperature: Min=0.708933, Max=1.34919, Average=0.977712
 H(x) for member 4:
-quenchxx[20]:
-- air_temperature: Min=0.670882, Max=1.23107, Average=0.988619
+quenchxx[30]:
+- air_temperature: Min=0.705337, Max=1.17972, Average=0.978145
 H(x) for member 5:
-quenchxx[20]:
-- air_temperature: Min=0.752622, Max=1.23451, Average=1.02046
+quenchxx[30]:
+- air_temperature: Min=0.744732, Max=1.2183, Average=0.968068
 H(x) for member 6:
-quenchxx[20]:
-- air_temperature: Min=0.754036, Max=1.27192, Average=1.02638
+quenchxx[30]:
+- air_temperature: Min=0.748918, Max=1.18754, Average=0.958131
 H(x) for member 7:
-quenchxx[20]:
-- air_temperature: Min=0.753346, Max=1.17885, Average=0.99285
+quenchxx[30]:
+- air_temperature: Min=0.695027, Max=1.12738, Average=0.964001
 H(x) for member 8:
-quenchxx[20]:
-- air_temperature: Min=0.778962, Max=1.19426, Average=0.991278
+quenchxx[30]:
+- air_temperature: Min=0.746734, Max=1.11693, Average=0.974521
 H(x) for member 9:
-quenchxx[20]:
-- air_temperature: Min=0.740818, Max=1.19197, Average=0.972145
+quenchxx[30]:
+- air_temperature: Min=0.655262, Max=1.11896, Average=0.929438
 H(x) for member 10:
-quenchxx[20]:
-- air_temperature: Min=0.719333, Max=1.18233, Average=0.962185
+quenchxx[30]:
+- air_temperature: Min=0.671134, Max=1.14875, Average=0.923433
 H(x) ensemble background mean: 
-quenchxx[20]:
-- air_temperature: Min=0.760253, Max=1.18555, Average=0.992863
+quenchxx[30]:
+- air_temperature: Min=0.741054, Max=1.13522, Average=0.958579
 background y - H(x): 
-quenchxx[20]:
-- air_temperature: Min=-0.399772, Max=0.227834, Average=0.0227486
+quenchxx[30]:
+- air_temperature: Min=-0.281709, Max=0.309455, Average=0.00911935
 Background mean :
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -233,7 +233,7 @@ Groups:
 Fields:
   air_temperature: 41.2921
 Analysis mean :
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -249,9 +249,9 @@ Groups:
   - vert_coord: [1,2]
   Mask size: 100%
 Fields:
-  air_temperature: 41.2794
+  air_temperature: 41.2951
 Analysis mean increment :
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -267,9 +267,9 @@ Groups:
   - vert_coord: [1,2]
   Mask size: 100%
 Fields:
-  air_temperature: 0.464955
+  air_temperature: 0.300571
 Forecast variance :
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -287,7 +287,7 @@ Groups:
 Fields:
   air_temperature: 0.448936
 Analysis variance :
-Valid time:2010-01-01T12:00:00Z
+Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
 - size: 840
@@ -303,42 +303,42 @@ Groups:
   - vert_coord: [1,2]
   Mask size: 100%
 Fields:
-  air_temperature: 0.437508
+  air_temperature: 0.438856
 H(x) for member 1:
-quenchxx[20]:
-- air_temperature: Min=0.608474, Max=1.19239, Average=0.977167
+quenchxx[30]:
+- air_temperature: Min=0.640253, Max=1.26248, Average=0.942175
 H(x) for member 2:
-quenchxx[20]:
-- air_temperature: Min=0.754122, Max=1.1891, Average=1.00686
+quenchxx[30]:
+- air_temperature: Min=0.822854, Max=1.28274, Average=0.968476
 H(x) for member 3:
-quenchxx[20]:
-- air_temperature: Min=0.731182, Max=1.23491, Average=0.990698
+quenchxx[30]:
+- air_temperature: Min=0.734556, Max=1.36477, Average=0.976731
 H(x) for member 4:
-quenchxx[20]:
-- air_temperature: Min=0.681476, Max=1.22818, Average=0.988499
+quenchxx[30]:
+- air_temperature: Min=0.707168, Max=1.19858, Average=0.976934
 H(x) for member 5:
-quenchxx[20]:
-- air_temperature: Min=0.756847, Max=1.211, Average=1.01944
+quenchxx[30]:
+- air_temperature: Min=0.741605, Max=1.17688, Average=0.967169
 H(x) for member 6:
-quenchxx[20]:
-- air_temperature: Min=0.758284, Max=1.17623, Average=1.02497
+quenchxx[30]:
+- air_temperature: Min=0.761502, Max=1.18707, Average=0.957189
 H(x) for member 7:
-quenchxx[20]:
-- air_temperature: Min=0.758445, Max=1.09047, Average=0.992929
+quenchxx[30]:
+- air_temperature: Min=0.709825, Max=1.12701, Average=0.963009
 H(x) for member 8:
-quenchxx[20]:
-- air_temperature: Min=0.776056, Max=1.21307, Average=0.990998
+quenchxx[30]:
+- air_temperature: Min=0.770947, Max=1.10949, Average=0.973668
 H(x) for member 9:
-quenchxx[20]:
-- air_temperature: Min=0.738006, Max=1.19071, Average=0.972343
+quenchxx[30]:
+- air_temperature: Min=0.669727, Max=1.13877, Average=0.929051
 H(x) for member 10:
-quenchxx[20]:
-- air_temperature: Min=0.723043, Max=1.20092, Average=0.963393
+quenchxx[30]:
+- air_temperature: Min=0.685924, Max=1.13442, Average=0.923311
 H(x) ensemble analysis mean: 
-quenchxx[20]:
-- air_temperature: Min=0.765419, Max=1.12698, Average=0.99273
+quenchxx[30]:
+- air_temperature: Min=0.756068, Max=1.1549, Average=0.957771
 analysis y - H(x): 
-quenchxx[20]:
-- air_temperature: Min=-0.23053, Max=0.207964, Average=0.0228819
-ombg RMS: 0.638136
-oman RMS: 0.473144
+quenchxx[30]:
+- air_temperature: Min=-0.206169, Max=0.263391, Average=0.0099275
+ombg RMS: 0.649051
+oman RMS: 0.530905

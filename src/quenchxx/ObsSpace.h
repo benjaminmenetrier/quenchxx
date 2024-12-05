@@ -12,21 +12,18 @@
 #include <vector>
 
 #include "atlas/field.h"
+#include "atlas/util/KDTree.h"
 #include "atlas/util/Point.h"
 
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#ifdef ECSABER
-#include "quenchxx/Variables.h"
-namespace varns = quenchxx;
-#else
-#include "oops/base/Variables.h"
-namespace varns = oops;
-#endif
+#include "quenchxx/Geometry.h"
+#include "quenchxx/VariablesSwitch.h"
 
 namespace eckit {
   class Configuration;
@@ -35,7 +32,6 @@ namespace eckit {
 namespace quenchxx {
   class GeoVaLs;
   class ObsVector;
-  class Geometry;
 
 // -----------------------------------------------------------------------------
 /// ObsSpace class
@@ -98,7 +94,11 @@ class ObsSpace : public util::Printable,
   void write(const std::string &,
              const bool &) const;
   void fillHalo();
-
+  template <typename T>
+  void splitObservations(const atlas::grid::Distribution &,
+                         const std::vector<T> &,
+                         const std::vector<T> &,
+                         std::vector<int> &);
   const util::DateTime winbgn_;
   const util::DateTime winend_;
   const bool lscreened_;
@@ -127,6 +127,47 @@ class ObsSpace : public util::Printable,
   std::vector<int> dataSendDispls_;
   std::vector<int> dataRecvDispls_;
 };
+
+// -----------------------------------------------------------------------------
+
+template <typename T>
+void ObsSpace::splitObservations(const atlas::grid::Distribution & distribution,
+                                 const std::vector<T> & longitude,
+                                 const std::vector<T> & latitude,
+                                 std::vector<int> & partition) {
+  oops::Log::trace() << classname() << "::splitObservations starting" << std::endl;
+
+  // TODO(Benjamin): other distributions
+  if (true) {
+    // Using nearest neighbor
+    atlas::util::IndexKDTree search;
+    search.reserve(geom_->grid().size());
+    size_t jnode = 0;
+    for (const auto & lonLat : geom_->grid().lonlat()) {
+      atlas::PointLonLat pointLonLat(lonLat);
+      pointLonLat.normalise();
+      atlas::PointXY point(pointLonLat);
+      search.insert(point, jnode);
+      ++jnode;
+    }
+    search.build();
+
+    for (size_t jo = 0; jo < nobsGlb_; ++jo) {
+      // Find MPI task
+      atlas::PointLonLat pointLonLat(longitude[jo], latitude[jo]);
+      pointLonLat.normalise();
+
+      // Search nearest neighborass
+      atlas::util::IndexKDTree::ValueList neighbor = search.closestPoints(pointLonLat, 1);
+
+      // Define partition
+      partition[jo] = distribution.partition(neighbor[0].payload());
+      ++nobsOwnVec_[partition[jo]];
+    }
+  }
+
+  oops::Log::trace() << classname() << "::splitObservations done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

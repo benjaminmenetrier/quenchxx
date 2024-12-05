@@ -31,13 +31,16 @@ import sys
 def line_diff(line1,line2,lnum,ftol,idif):
 
   #Split line by whitespace or '='
-  sline1 = re.split('\s+|=', line1)
-  sline2 = re.split('\s+|=', line2)
+  sline1 = re.split('\s+|=|,|[|]', line1)
+  sline2 = re.split('\s+|=|,|[|]', line2)
 
   lineerror = 0
 
   for n in range(len(sline1)):
     if sline1[n] != '':
+      # Remove brackets
+      sline1[n] = sline1[n].replace("[", "").replace("]", "")
+      sline2[n] = sline2[n].replace("[", "").replace("]", "")
 
       nnm1 = rennm.findall(sline1[n])
       flt1 = reflt.findall(sline1[n])
@@ -149,7 +152,7 @@ lines_ref = file_ref.readlines()
 # Regex: ABC[12][ABC] (combination of string and int, e.g. AMSUA-NOAA19
 rennm = re.compile('(^\D+[\d]*[\D]*$)')
 
-# Regex: #[ABC][-]12.34[e[+-]12][,] (combination of string and flaot, e.g. MAX=123.123e-07,
+# Regex: #[ABC][-]12.34[e[+-]12][,] (combination of string and float, e.g. MAX=123.123e-07,
 reflt = re.compile('(^[\D]*?[-]?\d+\.\d+(?:[e][+-]?[\d]+)?[\,]?$)')   #[ABC][-]12.34[e[+-]12][,]
 
 # Regex: #[-]12345[,] (combination of integer and comma, e.g. 123,

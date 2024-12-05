@@ -30,14 +30,7 @@
 #include "quenchxx/GeoVaLs.h"
 #include "quenchxx/Interpolation.h"
 #include "quenchxx/Locations.h"
-
-#ifdef ECSABER
-#include "quenchxx/Variables.h"
-namespace varns = quenchxx;
-#else
-#include "oops/base/Variables.h"
-namespace varns = oops;
-#endif
+#include "quenchxx/VariablesSwitch.h"
 
 namespace quenchxx {
   class Geometry;

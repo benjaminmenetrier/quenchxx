@@ -385,8 +385,8 @@ void ObsVector::print(std::ostream & os) const {
   oops::Log::trace() << classname() << "::print starting" << std::endl;
 
   std::vector<double> zmin(vars_.size(), std::numeric_limits<double>::max());
-  std::vector<double> zmax(vars_.size(), -std::numeric_limits<double>::max());
-  std::vector<double> zavg(vars_.size(), 0.0);
+  std::vector<double> zmax(vars_.size(), std::numeric_limits<double>::lowest());
+  std::vector<double> zrms(vars_.size(), 0.0);
 
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
     const atlas::Field field = data_[vars_[jvar].name()];
@@ -394,24 +394,28 @@ void ObsVector::print(std::ostream & os) const {
     for (size_t jo = 0; jo < obsSpace_.sizeOwn(); ++jo) {
       if (view(jo, 0) < zmin[jvar]) zmin[jvar] = view(jo, 0);
       if (view(jo, 0) > zmax[jvar]) zmax[jvar] = view(jo, 0);
-      zavg[jvar] += view(jo, 0);
+      zrms[jvar] += view(jo, 0)*view(jo, 0);
     }
   }
 
   comm_.allReduceInPlace(zmin.begin(), zmin.end(), eckit::mpi::min());
   comm_.allReduceInPlace(zmax.begin(), zmax.end(), eckit::mpi::max());
   if (obsSpace_.sizeGlb() > 0) {
-    comm_.allReduceInPlace(zavg.begin(), zavg.end(), eckit::mpi::sum());
+    comm_.allReduceInPlace(zrms.begin(), zrms.end(), eckit::mpi::sum());
     const double norm = 1.0/static_cast<double>(obsSpace_.sizeGlb());
-    for (auto & item : zavg) {
+    for (auto & item : zrms) {
       item *= norm;
+      item = std::sqrt(item);
     }
   }
 
-  os << "quenchxx[" << obsSpace_.sizeGlb() << "]:" << std::endl;
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-    os << "- " << vars_[jvar].name() << ": Min=" << zmin[0] << ", Max=" << zmax[0]
-      << ", Average=" << zavg[0];
+    if (obsSpace_.sizeGlb() > 0) {
+      os << vars_[jvar].name() << " nobs= " << obsSpace_.sizeGlb() << " Min="
+         << zmin[jvar] << ", Max=" << zmax[jvar] << ", RMS=" << zrms[jvar] << std::endl;
+    } else {
+      os << vars_[jvar].name() << ": No observations." << std::endl;
+    }
   }
 
   oops::Log::trace() << classname() << "::print done" << std::endl;

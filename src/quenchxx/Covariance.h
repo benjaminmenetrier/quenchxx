@@ -20,12 +20,7 @@
 
 #include "quenchxx/Increment.h"
 #include "quenchxx/IncrModCtlVec.h"
-
-#ifdef ECSABER
-namespace varns = quenchxx;
-#else
-namespace varns = oops;
-#endif
+#include "quenchxx/VariablesSwitch.h"
 
 namespace quenchxx {
   class Geometry;

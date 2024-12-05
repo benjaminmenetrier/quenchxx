@@ -14,12 +14,12 @@ endmacro()
 macro( create_test name mpi exec )
     if( ECSABER )
         ecbuild_add_test( TARGET quenchxx_test_${name}_${mpi}
-                          COMMAND ${CMAKE_BINARY_DIR}/bin/quenchxx_ecmwf_compare.sh
-                          ARGS ${CMAKE_BINARY_DIR}/bin/quenchxx_ecmwf_compare.py
+                          COMMAND ${CMAKE_BINARY_DIR}/bin/quenchxx_compare.sh
+                          ARGS ${CMAKE_BINARY_DIR}/bin/quenchxx_compare.py
                                ${mpi}
                                1
                                "${CMAKE_BINARY_DIR}/bin/quenchxx_${exec}.x testinput/ec/${name}.json"
-                               "${CMAKE_CURRENT_BINARY_DIR}/testref/ec/${name}.ref"
+                               ${CMAKE_CURRENT_BINARY_DIR}/testref/ec/${name}.ref
                           DEPENDS quenchxx_${exec}.x )
     else()
         ecbuild_add_test( TARGET   quenchxx_test_${name}_${mpi}

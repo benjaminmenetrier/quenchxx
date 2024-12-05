@@ -14,14 +14,12 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "atlas/functionspace.h"
 #include "atlas/grid/Grid.h"
-#include "atlas/util/KDTree.h"
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -30,10 +28,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/FieldSetHelpers.h"
-#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
-#include "quenchxx/Geometry.h"
 #include "quenchxx/GeoVaLs.h"
 #include "quenchxx/ObsVector.h"
 
@@ -193,6 +189,7 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
   oops::Log::trace() << classname() << "::timeSelect starting" << std::endl;
 
   std::vector<size_t> mask;
+  std::cout << "dlskfjsdmlkjlmksjfmlkj " << nobsLoc_ << " / "  << t1 << " / "  << t2 << std::endl;
   for (size_t jo = 0; jo < nobsLoc_; ++jo) {
     if (t1 == t2) {
       if (times_[jo] == t1) {
@@ -204,6 +201,7 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
       }
     }
   }
+  std::cout << "ldkfjsdlkjflkjsdlkfjsdlkjlskdfjlskdjflkjs " << mask << std::endl;
 
   oops::Log::trace() << classname() << "::timeSelect done" << std::endl;
   return mask;
@@ -214,93 +212,44 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
 void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   oops::Log::trace() << classname() << "::generateDistribution starting" << std::endl;
 
-  // TODO(Benjamin): same as JEDI
-
-  // No forecast: assimilation window start time must be equal to final time
-  ASSERT(winend_ == winbgn_);
-
   // Parameters
-  nobsGlb_ = config.getInt("density");
-  const std::vector<double> vert_coord_avg = geom_->vert_coord_avg(config.getString("variable"));
-  const double bottom = *std::min_element(vert_coord_avg.begin(), vert_coord_avg.end());
-  const double top = *std::max_element(vert_coord_avg.begin(), vert_coord_avg.end());
-
-  // Random number generator
-  static std::mt19937 generator(winbgn_.timestamp());
-  static std::uniform_real_distribution<double> randomDistrib(0.0, 1.0);
+  const std::vector<double> latitude = config.getDoubleVector("lats");
+  nobsGlb_ = latitude.size();
+  const std::vector<double> longitude = config.getDoubleVector("lons");
+  ASSERT(longitude.size() == nobsGlb_);
+  const std::vector<int> dateTime = config.getIntVector("dateTimes");
+  ASSERT(dateTime.size() == nobsGlb_);
+  const std::string vertCoordType = config.getString("vert coord type");
+  const std::vector<double> vertCoords = config.getDoubleVector("vert coords");
+  ASSERT(vertCoords.size() == nobsGlb_);
+  const std::string epoch = config.getString("epoch");
+  const std::vector<double> obsErrors = config.getDoubleVector("obs errors");
+  ASSERT(obsErrors.size() == vars_.size());
 
   // Global vectors
+  std::vector<int> timesGlb;
   std::vector<double> locsGlb;
-
-  // Define source grid horizontal distribution
-  const atlas::grid::Distribution distribution = geom_->partitioner().partition(geom_->grid());
 
   // Local number of observations
   nobsOwnVec_.resize(comm_.size());
+
+  // Define source grid horizontal distribution
+  const atlas::grid::Distribution distribution = geom_->partitioner().partition(geom_->grid());
 
   if (comm_.rank() == 0) {
     // Resize vectors
     std::vector<double> locsGlbTmp(3*nobsGlb_);
     std::vector<size_t> orderGlbTmp(nobsGlb_);
 
-    // Generate locations
-    size_t iobs = 0;
-    while (iobs < nobsGlb_) {
-      // Generate location
-      const double lon = 360.0*randomDistrib(generator);
-      const double lat = 90.0-std::acos(1.0-2.0*randomDistrib(generator))*180.0/M_PI;
-
-      // Check point validity
-      bool validPoint = true;
-      if (!geom_->grid().domain().global()) {
-        const atlas::functionspace::StructuredColumns fs(geom_->functionSpace());
-        const atlas::RegularGrid grid(fs.grid());
-        atlas::PointLonLat p({lon, lat});
-        grid.projection().lonlat2xy(p);
-        validPoint = grid.domain().contains(p);
-      }
-
-      // Process valid point
-      if (validPoint) {
-        locsGlbTmp[3*iobs] = lon;
-        locsGlbTmp[3*iobs+1] = lat;
-        locsGlbTmp[3*iobs+2] = bottom+(top-bottom)*randomDistrib(generator);
-        orderGlbTmp[iobs] = iobs;
-        ++iobs;
-      }
-    }
+    // Get start dateTime
+    const util::DateTime start(epoch.substr(14, 20));
 
     // Split observations between tasks
     std::vector<int> partition(nobsGlb_);
-    if (true) {  // TODO(Benjamin): other distributions
-      // Using nearest neighbor
-      atlas::util::IndexKDTree search;
-      search.reserve(geom_->grid().size());
-      size_t jnode = 0;
-      for (const auto & lonLat : geom_->grid().lonlat()) {
-        atlas::PointLonLat pointLonLat(lonLat);
-        pointLonLat.normalise();
-        atlas::PointXY point(pointLonLat);
-        search.insert(point, jnode);
-        ++jnode;
-      }
-      search.build();
-
-      for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-        // Find MPI task
-        atlas::PointLonLat pointLonLat(locsGlbTmp[3*jo], locsGlbTmp[3*jo+1]);
-        pointLonLat.normalise();
-
-        // Search nearest neighbor
-        atlas::util::IndexKDTree::ValueList neighbor = search.closestPoints(pointLonLat, 1);
-
-        // Define partition
-        partition[jo] = distribution.partition(neighbor[0].payload());
-        ++nobsOwnVec_[partition[jo]];
-      }
-    }
+    splitObservations<double>(distribution, longitude, latitude, partition);
 
     // Reorder vectors
+    timesGlb.resize(6*nobsGlb_);
     locsGlb.resize(3*nobsGlb_);
     order_.resize(nobsGlb_);
     std::vector<int> iobsOwnVec(comm_.size(), 0);
@@ -310,10 +259,13 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
         offset += nobsOwnVec_[jt];
       }
       offset += iobsOwnVec[partition[jo]];
-      locsGlb[3*offset+0] = locsGlbTmp[3*jo+0];
-      locsGlb[3*offset+1] = locsGlbTmp[3*jo+1];
-      locsGlb[3*offset+2] = locsGlbTmp[3*jo+2];
-      order_[offset] = orderGlbTmp[jo];
+      util::DateTime startTest = start + util::Duration(dateTime[jo]);
+      startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
+        timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
+      locsGlb[3*offset+0] = longitude[jo];
+      locsGlb[3*offset+1] = latitude[jo];
+      locsGlb[3*offset+2] = vertCoords[jo];
+      order_[offset] = jo;
       ++iobsOwnVec[partition[jo]];
     }
   }
@@ -323,35 +275,39 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   nobsOwn_ = nobsOwnVec_[comm_.rank()];
 
   // Allocation of local vector
+  std::vector<int> timesOwn(6*nobsOwn_);
   std::vector<double> locsOwn(3*nobsOwn_);
 
   // Define counts and displacements
+  std::vector<int> timesCounts;
   std::vector<int> locsCounts;
+  std::vector<int> timesDispls;
   std::vector<int> locsDispls;
   for (size_t jt = 0; jt < comm_.size(); ++jt) {
+    timesCounts.push_back(6*nobsOwnVec_[jt]);
     locsCounts.push_back(3*nobsOwnVec_[jt]);
   }
+  timesDispls.push_back(0);
   locsDispls.push_back(0);
   for (size_t jt = 0; jt < comm_.size()-1; ++jt) {
+    timesDispls.push_back(timesDispls[jt]+timesCounts[jt]);
     locsDispls.push_back(locsDispls[jt]+locsCounts[jt]);
   }
 
-  // Scatter locations
+  // Scatter times and locations
+  comm_.scatterv(timesGlb.begin(), timesGlb.end(), timesCounts, timesDispls,
+    timesOwn.begin(), timesOwn.end(), 0);
   comm_.scatterv(locsGlb.begin(), locsGlb.end(), locsCounts, locsDispls,
     locsOwn.begin(), locsOwn.end(), 0);
 
   // Format data
   for (size_t jo = 0; jo < nobsOwn_; ++jo) {
+    times_.push_back(util::DateTime(timesOwn[6*jo], timesOwn[6*jo+1], timesOwn[6*jo+2],
+      timesOwn[6*jo+3], timesOwn[6*jo+4], timesOwn[6*jo+5]));
     locs_.push_back(atlas::Point3(locsOwn[3*jo], locsOwn[3*jo+1], locsOwn[3*jo+2]));
   }
 
-  // Generate times
-  for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-    times_.push_back(winbgn_);
-  }
-
   // Generate observations error
-  const std::vector<double> err = config.getDoubleVector("error");
   atlas::FieldSet fset;
   fset.name() = config.getString("obserror");
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
@@ -359,7 +315,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
       atlas::array::make_shape(nobsOwn_, 1));
     auto view = atlas::array::make_view<double, 2>(field);
     for (size_t jo = 0; jo < nobsOwn_; ++jo) {
-      view(jo, 0) = err[jvar];
+      view(jo, 0) = obsErrors[jvar];
     }
     fset.add(field);
   }
@@ -496,8 +452,8 @@ void ObsSpace::read(const std::string & filePath) {
     memset(dateTime_units_char, 0, attlen*sizeof(char*));
     if (retval = nc_get_att_string(meta_group_id, dateTime_id, dateTime_units_key.c_str(),
       dateTime_units_char)) ERR(retval);
-    std::string dateTime_units_value(*dateTime_units_char);
-    util::DateTime start(dateTime_units_value.substr(14, 20));
+    const std::string dateTime_units_value(*dateTime_units_char);
+    const util::DateTime start(dateTime_units_value.substr(14, 20));
 
     // Get longitude, latitude and height from MetaData
     std::vector<float> longitude(nobsGlb_);
@@ -512,35 +468,8 @@ void ObsSpace::read(const std::string & filePath) {
     if (retval = nc_get_var_float(meta_group_id, height_id, height.data())) ERR(retval);
 
     // Split observations between tasks
-    // TODO(Benjamin): other distributions
     partition.resize(nobsGlb_);
-    if (true) {
-      // Using nearest neighbor
-      atlas::util::IndexKDTree search;
-      search.reserve(geom_->grid().size());
-      size_t jnode = 0;
-      for (const auto & lonLat : geom_->grid().lonlat()) {
-        atlas::PointLonLat pointLonLat(lonLat);
-        pointLonLat.normalise();
-        atlas::PointXY point(pointLonLat);
-        search.insert(point, jnode);
-        ++jnode;
-      }
-      search.build();
-
-      for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-        // Find MPI task
-        atlas::PointLonLat pointLonLat(longitude[jo], latitude[jo]);
-        pointLonLat.normalise();
-
-        // Search nearest neighborass
-        atlas::util::IndexKDTree::ValueList neighbor = search.closestPoints(pointLonLat, 1);
-
-        // Define partition
-        partition[jo] = distribution.partition(neighbor[0].payload());
-        ++nobsOwnVec_[partition[jo]];
-      }
-    }
+    splitObservations<float>(distribution, longitude, latitude, partition);
 
     // Get ordered time and location
     timesGlb.resize(6*nobsGlb_);
@@ -673,15 +602,6 @@ void ObsSpace::read(const std::string & filePath) {
   if (comm_.rank() == 0) {
     // Close file
     if (retval = nc_close(ncid)) ERR(retval);
-  }
-
-  // Add one second if time_ = winbgn_ and  winend_ > winbgn_
-  if (winend_ > winbgn_) {
-    for (auto & time : times_) {
-      if (time == winbgn_) {
-        time += util::Duration("PT1S");
-      }
-    }
   }
 
   // Halo expansion
