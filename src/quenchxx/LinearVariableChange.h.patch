@@ -1,5 +1,5 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.h.tmp.bak	2024-12-03 10:42:07.742620303 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.h	2024-12-03 10:47:09.973656990 +0100
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.h.tmp.bak	2024-12-05 10:04:27.845768711 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.h	2024-12-05 10:07:07.761768365 +0100
 @@ -21,6 +21,7 @@
  #include "quenchxx/Geometry.h"
  #include "quenchxx/Increment.h"

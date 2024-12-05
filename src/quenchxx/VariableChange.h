@@ -49,8 +49,8 @@ class VariableChange : public util::Printable {
   void print(std::ostream & os) const override
     {os << "VariableChange";};
 
-  // Geometry pointer
-  std::shared_ptr<const Geometry> geom_;
+  // Geometry reference
+  const Geometry & geom_;
 
   // VADER
   std::unique_ptr<vader::Vader> vader_;

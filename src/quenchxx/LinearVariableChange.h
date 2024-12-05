@@ -62,7 +62,7 @@ class LinearVariableChange: public util::Printable {
   std::map<std::string, std::string> map_;
 
   // Multiplicative factor
-  atlas::FieldSet fset_;
+  atlas::FieldSet multiplierFset_;
 };
 // -----------------------------------------------------------------------------
 

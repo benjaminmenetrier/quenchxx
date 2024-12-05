@@ -19,6 +19,7 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "oops/base/GeometryData.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -219,6 +220,8 @@ class Geometry : public util::Printable,
     {return eckit::mpi::self();}
   const std::vector<double> & vert_coord_avg(const std::string & var) const
     {return groups_[groupIndex_.at(var)].vert_coord_avg_;}
+  const oops::GeometryData & generic() const
+    {return *geomData_;}
 
   // Geometry iterator
   GeometryIterator begin() const;
@@ -303,6 +306,9 @@ class Geometry : public util::Printable,
   size_t nnodes_;
   size_t nlevs_;
   std::vector<double> vert_coord_avg_;
+
+  // Geometry data structure
+  std::unique_ptr<oops::GeometryData> geomData_;
 };
 
 // -----------------------------------------------------------------------------

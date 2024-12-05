@@ -19,28 +19,31 @@ namespace quenchxx {
 
 // -----------------------------------------------------------------------------
 
-Interpolation::Interpolation(const eckit::Configuration & conf,
-                             const eckit::mpi::Comm & comm,
-                             const atlas::grid::Partitioner & srcPartitioner,
-                             const atlas::FunctionSpace & srcFspace,
+Interpolation::Interpolation(const Geometry & geom,
                              const std::string & srcUid,
                              const atlas::Grid & dstGrid,
                              const atlas::FunctionSpace & dstFspace,
                              const std::string & dstUid)
-  : srcUid_(srcUid), dstUid_(dstUid), dstFspace_(dstFspace), atlasInterpWrapper_() {
+  : srcUid_(srcUid), dstUid_(dstUid), dstFspace_(dstFspace) {
   oops::Log::trace() << classname() << "::Interpolation starting" << std::endl;
 
   // Get interpolation type
-  const std::string type = conf.getString("interpolation type");
+  const std::string type = geom.interpolation().getString("interpolation type");
 
   // Setup interpolation
   if (type == "atlas interpolation wrapper") {
-    atlasInterpWrapper_ = std::make_shared<saber::interpolation::AtlasInterpWrapper>(srcPartitioner,
-      srcFspace, dstGrid, dstFspace);
+    atlasInterpWrapper_ = std::make_shared<saber::interpolation::AtlasInterpWrapper>(
+      geom.partitioner(), geom.functionSpace(), dstGrid, dstFspace);
   } else if (type == "regional") {
     regionalInterp_ = std::make_shared<atlas::Interpolation>(
       atlas::util::Config("type", "regional-linear-2d"),
-      srcFspace, dstFspace);
+      geom.functionSpace(), dstFspace);
+  } else if (type == "unstructured") {
+    std::vector<double> lons;
+    std::vector<double> lats;
+    // TODO(Benjamin): fill lons/lats from dstFspace
+    unstructuredInterp_ = std::make_shared<oops::UnstructuredInterpolator>(geom.interpolation(),
+      geom.generic(), lons, lats);
   } else {
     throw eckit::Exception("wrong interpolation type", Here());
   }

@@ -15,7 +15,7 @@ namespace quenchxx {
 
 Model::Model(const Geometry &,
              const eckit::Configuration & config)
-  : timeResolution_(config.getString("tstep", "PT1S")) {
+  : timeResolution_(config.getString("tstep", "PT2S")) {
   oops::Log::trace() << classname() << "::Model" << std::endl;
 }
 

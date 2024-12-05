@@ -189,7 +189,6 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
   oops::Log::trace() << classname() << "::timeSelect starting" << std::endl;
 
   std::vector<size_t> mask;
-  std::cout << "dlskfjsdmlkjlmksjfmlkj " << nobsLoc_ << " / "  << t1 << " / "  << t2 << std::endl;
   for (size_t jo = 0; jo < nobsLoc_; ++jo) {
     if (t1 == t2) {
       if (times_[jo] == t1) {
@@ -201,7 +200,6 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
       }
     }
   }
-  std::cout << "ldkfjsdlkjflkjsdlkfjsdlkjlskdfjlskdjflkjs " << mask << std::endl;
 
   oops::Log::trace() << classname() << "::timeSelect done" << std::endl;
   return mask;

@@ -311,6 +311,9 @@ Geometry::Geometry(const eckit::Configuration & config,
     vert_coord_avg_.push_back(vert_coord_avg);
   }
 
+  // GeometryData
+  geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+
   // Print summary
   this->print(oops::Log::info());
 
@@ -375,6 +378,9 @@ Geometry::Geometry(const Geometry & other)
     // Save group
     groups_.push_back(group);
   }
+
+  // Geometry data
+  geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
 
   oops::Log::trace() << classname() << "::Geometry done" << std::endl;
 }

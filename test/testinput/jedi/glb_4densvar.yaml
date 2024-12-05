@@ -1,9 +1,9 @@
 cost function:
   cost type: 4D-Ens-Var
   time window:
-    begin: 2010-01-01T05:59:59Z
-    length: PT12H2S
-  subwindow: PT6H1S
+    begin: 2010-01-01T06:00:00Z
+    length: PT12H
+  subwindow: PT6H
   parallel subwindows: false
   analysis variables: [air_temperature]
   geometry: &geom

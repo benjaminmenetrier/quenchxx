@@ -1,15 +1,6 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc.tmp.bak	2024-12-03 11:28:36.425433044 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc	2024-12-03 11:01:11.593689635 +0100
-@@ -61,7 +61,7 @@
-   // TODO(AS): replace with setting up variables correctly
-   util::readFieldSet(geom.getComm(),
-                      geom.functionSpace(),
--                     geom.variableSizes(*params.inputVariables.value()),
-+                     geom.variableSizes(params.inputVariables.value()->variables()),
-                      params.inputVariables.value()->variables(),
-                      conf,
-                      fset_);
-@@ -72,7 +72,7 @@
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc.tmp.bak	2024-12-05 10:04:27.753768112 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc	2024-12-05 10:06:08.017403867 +0100
+@@ -74,7 +74,7 @@
  // -----------------------------------------------------------------------------
  
  void LinearVariableChange::changeVarTL(Increment & dx,
@@ -17,8 +8,8 @@
 +                                       const varns::Variables & vars) const {
    oops::Log::trace() << classname() << "::changeVarTL starting" << std::endl;
  
-   // Check that output variables are the same as in the map
-@@ -102,7 +102,7 @@
+   if (!multiplierFset_.empty()) {
+@@ -106,7 +106,7 @@
  // -----------------------------------------------------------------------------
  
  void LinearVariableChange::changeVarInverseTL(Increment & dx,
@@ -26,8 +17,8 @@
 +                                              const varns::Variables & vars) const {
    oops::Log::trace() << classname() << "::changeVarInverseTL starting" << std::endl;
  
-   // Check that output variables are the same as in the map
-@@ -132,7 +132,7 @@
+   if (!multiplierFset_.empty()) {
+@@ -138,7 +138,7 @@
  // -----------------------------------------------------------------------------
  
  void LinearVariableChange::changeVarAD(Increment & dx,
@@ -35,8 +26,8 @@
 +                                       const varns::Variables & vars) const {
    oops::Log::trace() << classname() << "::changeVarAD starting" << std::endl;
  
-   // Check that output variables are the same as in the map
-@@ -162,7 +162,7 @@
+   if (!multiplierFset_.empty()) {
+@@ -170,7 +170,7 @@
  // -----------------------------------------------------------------------------
  
  void LinearVariableChange::changeVarInverseAD(Increment & dx,
@@ -44,4 +35,4 @@
 +                                              const varns::Variables & vars) const {
    oops::Log::trace() << classname() << "::changeVarInverseAD starting" << std::endl;
  
-   // Check that output variables are the same as in the map
+   if (!multiplierFset_.empty()) {

@@ -29,42 +29,44 @@ LinearVariableChange::LinearVariableChange(const Geometry & geom,
   LinearVariableChangeParameters params;
   params.deserialize(config);
 
-  // Check that input and output variables are present
-  ASSERT(params.inputVariables.value() != boost::none);
-  ASSERT(params.outputVariables.value() != boost::none);
+  if (params.atlasFile.value() != boost::none) {
+    // Check that input and output variables are present
+    ASSERT(params.inputVariables.value() != boost::none);
+    ASSERT(params.outputVariables.value() != boost::none);
 
-  // Define output to input variables map
-  ASSERT(params.inputVariables.value()->size() == params.outputVariables.value()->size());
-  for (size_t jj = 0; jj < params.outputVariables.value()->size(); ++jj) {
-    map_[(*params.outputVariables.value())[jj].name()] =
-      (*params.inputVariables.value())[jj].name();
-  }
+    // Define output to input variables map
+    ASSERT(params.inputVariables.value()->size() == params.outputVariables.value()->size());
+    for (size_t jj = 0; jj < params.outputVariables.value()->size(); ++jj) {
+      map_[(*params.outputVariables.value())[jj].name()] =
+        (*params.inputVariables.value())[jj].name();
+    }
 
-  // Read multiplicative factor
-  eckit::LocalConfiguration conf(params.atlasFile.value());
+    // Read multiplicative factor
+    eckit::LocalConfiguration conf(*params.atlasFile.value());
 
-  // Get number of MPI tasks and OpenMP threads
-  std::string mpi(std::to_string(geom.getComm().size()));
-  std::string omp("1");
+    // Get number of MPI tasks and OpenMP threads
+    std::string mpi(std::to_string(geom.getComm().size()));
+    std::string omp("1");
 #ifdef _OPENMP
   # pragma omp parallel
-  {
-    omp = std::to_string(omp_get_num_threads());
-  }
+    {
+      omp = std::to_string(omp_get_num_threads());
+    }
 #endif
 
-  // Replace patterns
-  util::seekAndReplace(conf, "_MPI_", mpi);
-  util::seekAndReplace(conf, "_OMP_", omp);
+    // Replace patterns
+    util::seekAndReplace(conf, "_MPI_", mpi);
+    util::seekAndReplace(conf, "_OMP_", omp);
 
-  // Read fieldset
-  // TODO(AS): replace with setting up variables correctly
-  util::readFieldSet(geom.getComm(),
-                     geom.functionSpace(),
-                     geom.variableSizes(params.inputVariables.value()->variables()),
-                     params.inputVariables.value()->variables(),
-                     conf,
-                     fset_);
+    // Read fieldset
+    // TODO(AS): replace with setting up variables correctly
+    util::readFieldSet(geom.getComm(),
+                       geom.functionSpace(),
+                       geom.variableSizes(params.inputVariables.value()->variables()),
+                       params.inputVariables.value()->variables(),
+                       conf,
+                       multiplierFset_);
+  }
 
   oops::Log::trace() << classname() << "::LinearVariableChange done" << std::endl;
 }
@@ -75,26 +77,28 @@ void LinearVariableChange::changeVarTL(Increment & dx,
                                        const varns::Variables & vars) const {
   oops::Log::trace() << classname() << "::changeVarTL starting" << std::endl;
 
-  // Check that output variables are the same as in the map
-  ASSERT(vars.size() == map_.size());
-  for (auto const& it : map_) {
-    ASSERT(vars.has(it.first));
+  if (!multiplierFset_.empty()) {
+    // Check that output variables are the same as in the map
+    ASSERT(vars.size() == map_.size());
+    for (auto const& it : map_) {
+      ASSERT(vars.has(it.first));
+    }
+
+    // Get fieldset
+    atlas::FieldSet fset;
+    dx.toFieldSet(fset);
+
+    // Multiply with the read fieldset
+    util::multiplyFieldSets(fset, multiplierFset_);
+
+    // Change variable name
+    for (auto const& it : map_) {
+      fset[it.second].rename(it.first);
+    }
+
+    // Back to increment
+    dx.fromFieldSet(fset);
   }
-
-  // Get fieldset
-  atlas::FieldSet fset;
-  dx.toFieldSet(fset);
-
-  // Multiply with the read fieldset
-  util::multiplyFieldSets(fset, fset_);
-
-  // Change variable name
-  for (auto const& it : map_) {
-    fset[it.second].rename(it.first);
-  }
-
-  // Back to increment
-  dx.fromFieldSet(fset);
 
   oops::Log::trace() << classname() << "::changeVarTL done" << std::endl;
 }
@@ -105,26 +109,28 @@ void LinearVariableChange::changeVarInverseTL(Increment & dx,
                                               const varns::Variables & vars) const {
   oops::Log::trace() << classname() << "::changeVarInverseTL starting" << std::endl;
 
-  // Check that output variables are the same as in the map
-  ASSERT(vars.size() == map_.size());
-  for (auto const& it : map_) {
-    ASSERT(vars.has(it.second));
+  if (!multiplierFset_.empty()) {
+    // Check that output variables are the same as in the map
+    ASSERT(vars.size() == map_.size());
+    for (auto const& it : map_) {
+      ASSERT(vars.has(it.second));
+    }
+
+    // Get fieldset
+    atlas::FieldSet fset;
+    dx.toFieldSet(fset);
+
+    // Change variable name
+    for (auto const& it : map_) {
+      fset[it.first].rename(it.second);
+    }
+
+    // Divide by the read fieldset
+    util::divideFieldSets(fset, multiplierFset_);
+
+    // Back to increment
+    dx.fromFieldSet(fset);
   }
-
-  // Get fieldset
-  atlas::FieldSet fset;
-  dx.toFieldSet(fset);
-
-  // Change variable name
-  for (auto const& it : map_) {
-    fset[it.first].rename(it.second);
-  }
-
-  // Divide by the read fieldset
-  util::divideFieldSets(fset, fset_);
-
-  // Back to increment
-  dx.fromFieldSet(fset);
 
   oops::Log::trace() << classname() << "::changeVarInverseTL done" << std::endl;
 }
@@ -135,26 +141,28 @@ void LinearVariableChange::changeVarAD(Increment & dx,
                                        const varns::Variables & vars) const {
   oops::Log::trace() << classname() << "::changeVarAD starting" << std::endl;
 
-  // Check that output variables are the same as in the map
-  ASSERT(vars.size() == map_.size());
-  for (auto const& it : map_) {
-    ASSERT(vars.has(it.second));
+  if (!multiplierFset_.empty()) {
+    // Check that output variables are the same as in the map
+    ASSERT(vars.size() == map_.size());
+    for (auto const& it : map_) {
+      ASSERT(vars.has(it.second));
+    }
+
+    // Get fieldset
+    atlas::FieldSet fset;
+    dx.toFieldSet(fset);
+
+    // Change variable name
+    for (auto const& it : map_) {
+      fset[it.first].rename(it.second);
+    }
+
+    // Multiply with the read fieldset
+    util::multiplyFieldSets(fset, multiplierFset_);
+
+    // Back to increment
+    dx.fromFieldSet(fset);
   }
-
-  // Get fieldset
-  atlas::FieldSet fset;
-  dx.toFieldSet(fset);
-
-  // Change variable name
-  for (auto const& it : map_) {
-    fset[it.first].rename(it.second);
-  }
-
-  // Multiply with the read fieldset
-  util::multiplyFieldSets(fset, fset_);
-
-  // Back to increment
-  dx.fromFieldSet(fset);
 
   oops::Log::trace() << classname() << "::changeVarAD done" << std::endl;
 }
@@ -165,26 +173,28 @@ void LinearVariableChange::changeVarInverseAD(Increment & dx,
                                               const varns::Variables & vars) const {
   oops::Log::trace() << classname() << "::changeVarInverseAD starting" << std::endl;
 
-  // Check that output variables are the same as in the map
-  ASSERT(vars.size() == map_.size());
-  for (auto const& it : map_) {
-    ASSERT(vars.has(it.first));
+  if (!multiplierFset_.empty()) {
+    // Check that output variables are the same as in the map
+    ASSERT(vars.size() == map_.size());
+    for (auto const& it : map_) {
+      ASSERT(vars.has(it.first));
+    }
+
+    // Get fieldset
+    atlas::FieldSet fset;
+    dx.toFieldSet(fset);
+
+    // Divide by the read fieldset
+    util::divideFieldSets(fset, multiplierFset_);
+
+    // Change variable name
+    for (auto const& it : map_) {
+      fset[it.second].rename(it.first);
+    }
+
+    // Back to increment
+    dx.fromFieldSet(fset);
   }
-
-  // Get fieldset
-  atlas::FieldSet fset;
-  dx.toFieldSet(fset);
-
-  // Divide by the read fieldset
-  util::divideFieldSets(fset, fset_);
-
-  // Change variable name
-  for (auto const& it : map_) {
-    fset[it.second].rename(it.first);
-  }
-
-  // Back to increment
-  dx.fromFieldSet(fset);
 
   oops::Log::trace() << classname() << "::changeVarInverseAD done" << std::endl;
 }

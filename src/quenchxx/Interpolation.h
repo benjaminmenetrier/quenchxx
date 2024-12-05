@@ -18,8 +18,11 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+
+#include "quenchxx/Geometry.h"
 
 #include "saber/interpolation/AtlasInterpWrapper.h"
 
@@ -41,10 +44,7 @@ class Interpolation {
     {return "quenchxx::Interpolation";}
 
   // Constructor/destructor
-  Interpolation(const eckit::Configuration &,
-                const eckit::mpi::Comm &,
-                const atlas::grid::Partitioner &,
-                const atlas::FunctionSpace &,
+  Interpolation(const Geometry &,
                 const std::string &,
                 const atlas::Grid &,
                 const atlas::FunctionSpace &,
@@ -88,6 +88,9 @@ class Interpolation {
 
   // Regional ATLAS interpolation
   std::shared_ptr<atlas::Interpolation> regionalInterp_;
+
+  // OOPS unstructured interpolation
+  std::shared_ptr<oops::UnstructuredInterpolator> unstructuredInterp_;
 
   // Vertical interpolations
   std::unordered_map<std::string, std::vector<std::array<size_t, 2>>> verStencil_;

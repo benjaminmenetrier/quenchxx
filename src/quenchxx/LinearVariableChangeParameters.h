@@ -21,7 +21,7 @@ class LinearVariableChangeParameters : public oops::LinearVariableChangeParamete
   OOPS_CONCRETE_PARAMETERS(LinearVariableChangeParameters, LinearVariableChangeParametersBase)
  public:
   // ATLAS file (multiplicative factor)
-  oops::RequiredParameter<eckit::LocalConfiguration> atlasFile{"atlas file", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> atlasFile{"atlas file", this};
 };
 
 // -------------------------------------------------------------------------------------------------

@@ -33,7 +33,7 @@ namespace quenchxx {
 
 VariableChange::VariableChange(const eckit::Configuration & config,
                                const Geometry & geom)
-  : geom_(new Geometry(geom)), vader_() {
+  : geom_(geom), vader_() {
   oops::Log::trace() << classname() << "::VariableChange starting" << std::endl;
 
   // Deserialize configuration
@@ -87,9 +87,9 @@ void VariableChange::changeVar(State & x,
     // Create any fields that do not exist
     for (auto & var : vars_out) {
       if (!fset.has(var.name())) {
-        fset.add(geom_->functionSpace().createField<double>(
+        fset.add(geom_.functionSpace().createField<double>(
           atlas::option::name(var.name()) |
-          atlas::option::levels(geom_->levels(var.name()))));
+          atlas::option::levels(geom_.levels(var.name()))));
       }
     }
 

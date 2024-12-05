@@ -1552,10 +1552,7 @@ std::vector<Interpolation>::iterator Fields::setupGridInterpolation(const Geomet
   }
 
   // Create interpolation
-  Interpolation interpolation(geom_->interpolation(),
-                              geom_->getComm(),
-                              srcGeom.partitioner(),
-                              srcGeom.functionSpace(),
+  Interpolation interpolation(srcGeom,
                               srcGeomUid,
                               geom_->grid(),
                               geom_->functionSpace(),
@@ -1581,7 +1578,7 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
   // Compare with existing UIDs
   for (auto it = interpolations().begin(); it != interpolations().end(); ++it) {
     if ((it->srcUid() == srcGeomUid) && (it->dstUid() == dstObsUid)) {
-      oops::Log::trace() << classname() << "::setupGridInterpolation done" << std::endl;
+      oops::Log::trace() << classname() << "::setupObsInterpolation done" << std::endl;
       return it;
     }
   }
@@ -1617,10 +1614,7 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
   }
 
   // Create horizontal interpolation
-  Interpolation interpolation(geom_->interpolation(),
-                              geom_->getComm(),
-                              geom_->partitioner(),
-                              geom_->functionSpace(),
+  Interpolation interpolation(*geom_,
                               srcGeomUid,
                               locs.grid(),
                               *fspace,

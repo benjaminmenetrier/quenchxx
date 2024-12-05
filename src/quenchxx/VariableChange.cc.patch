@@ -1,6 +1,6 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc.tmp.bak	2024-12-03 10:26:14.260763533 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc	2024-12-03 10:34:48.563549812 +0100
-@@ -8,11 +8,24 @@
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc.tmp.bak	2024-12-05 10:04:27.777768268 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc	2024-12-05 10:06:54.428687861 +0100
+@@ -8,11 +8,23 @@
  
  #include "quenchxx/VariableChange.h"
  
@@ -11,7 +11,6 @@
 +#include <vector>
 +
 +#include "oops/base/Variables.h"
-+#include "oops/util/FieldSetHelpers.h"
  #include "oops/util/ConfigFunctions.h"
  #include "oops/util/FieldSetHelpers.h"
  #include "oops/util/FieldSetOperations.h"
@@ -25,12 +24,12 @@
  #include "quenchxx/VariableChangeParameters.h"
  
  namespace quenchxx {
-@@ -21,38 +34,73 @@
+@@ -21,38 +33,73 @@
  
  VariableChange::VariableChange(const eckit::Configuration & config,
                                 const Geometry & geom)
--  : geom_(new Geometry(geom)) {
-+  : geom_(new Geometry(geom)), vader_() {
+-  : geom_(geom) {
++  : geom_(geom), vader_() {
    oops::Log::trace() << classname() << "::VariableChange starting" << std::endl;
 +
 +  // Deserialize configuration
@@ -77,9 +76,9 @@
 -  // Create any fields that do not exist
 -  for (auto & var : vars_out) {
 -    if (!fset.has(var.name())) {
--      fset.add(geom_->functionSpace().createField<double>(
+-      fset.add(geom_.functionSpace().createField<double>(
 -        atlas::option::name(var.name()) |
--        atlas::option::levels(geom_->levels(var.name()))));
+-        atlas::option::levels(geom_.levels(var.name()))));
 +  if (vader_) {
 +    // State to FieldSet
 +    x.toFieldSet(fset);
@@ -94,9 +93,9 @@
 +    // Create any fields that do not exist
 +    for (auto & var : vars_out) {
 +      if (!fset.has(var.name())) {
-+        fset.add(geom_->functionSpace().createField<double>(
++        fset.add(geom_.functionSpace().createField<double>(
 +          atlas::option::name(var.name()) |
-+          atlas::option::levels(geom_->levels(var.name()))));
++          atlas::option::levels(geom_.levels(var.name()))));
 +      }
      }
 -  }
@@ -117,7 +116,7 @@
  
    // FieldSet to State
    x.fromFieldSet(fset);
-@@ -63,11 +111,24 @@
+@@ -63,11 +110,24 @@
  // -----------------------------------------------------------------------------
  
  void VariableChange::changeVarInverse(State & x,

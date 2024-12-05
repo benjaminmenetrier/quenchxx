@@ -1,5 +1,5 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.h.tmp.bak	2024-12-03 10:42:07.586621244 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.h	2024-12-03 10:46:35.561694020 +0100
+--- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.h.tmp.bak	2024-12-05 10:04:27.688767689 +0100
++++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.h	2024-12-05 10:04:42.968866717 +0100
 @@ -11,6 +11,7 @@
  #include <memory>
  #include <ostream>
@@ -32,8 +32,8 @@
    // Print
 @@ -47,6 +51,9 @@
  
-   // Geometry pointer
-   std::shared_ptr<const Geometry> geom_;
+   // Geometry reference
+   const Geometry & geom_;
 +
 +  // VADER
 +  std::unique_ptr<vader::Vader> vader_;
