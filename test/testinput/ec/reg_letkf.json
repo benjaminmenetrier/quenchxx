@@ -117,5 +117,8 @@
   },
   "output variance posterior": {
     "filepath": "Data/synthetic/reg_letkf_var_posterior"
+  },
+  "test": {
+    "reference filename": "testref/ec/reg_letkf.ref"
   }
 }

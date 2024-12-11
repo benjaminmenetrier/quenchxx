@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "atlas/field.h"
-#include "atlas/util/KDTree.h"
 #include "atlas/util/Point.h"
 
 #include "eckit/mpi/Comm.h"
@@ -86,19 +85,20 @@ class ObsSpace : public util::Printable,
     {return vars_;}
   std::vector<atlas::Point3> & locations() const
     {return locs_;}
-  void fillHalo(atlas::FieldSet & fset) const;
+  void fillHalo(atlas::FieldSet &) const;
+  int64_t getSeed() const
+    {return seed_;}
 
  private:
   void print(std::ostream &) const;
   void read(const std::string &);
   void write(const std::string &,
              const bool &) const;
-  void fillHalo();
-  template <typename T>
-  void splitObservations(const atlas::grid::Distribution &,
-                         const std::vector<T> &,
-                         const std::vector<T> &,
+  void setupHalo() const;
+  void splitObservations(const std::vector<float> &,
+                         const std::vector<float> &,
                          std::vector<int> &);
+
   const util::DateTime winbgn_;
   const util::DateTime winend_;
   const bool lscreened_;
@@ -113,61 +113,21 @@ class ObsSpace : public util::Printable,
   std::string nameIn_;
   std::string nameOut_;
   size_t nobsOwn_;
-  size_t nobsLoc_;
   size_t nobsGlb_;
   const varns::Variables vars_;
   std::vector<size_t> nobsOwnVec_;
   std::vector<int> order_;
   eckit::LocalConfiguration distribution_;
-  std::vector<int> sendBufIndex_;
-  size_t nSend_;
-  size_t nRecv_;
-  std::vector<int> dataSendCounts_;
-  std::vector<int> dataRecvCounts_;
-  std::vector<int> dataSendDispls_;
-  std::vector<int> dataRecvDispls_;
+  mutable size_t nobsLoc_;
+  mutable std::vector<int> sendBufIndex_;
+  mutable size_t nSend_;
+  mutable size_t nRecv_;
+  mutable std::vector<int> dataSendCounts_;
+  mutable std::vector<int> dataRecvCounts_;
+  mutable std::vector<int> dataSendDispls_;
+  mutable std::vector<int> dataRecvDispls_;
+  int64_t seed_;
 };
-
-// -----------------------------------------------------------------------------
-
-template <typename T>
-void ObsSpace::splitObservations(const atlas::grid::Distribution & distribution,
-                                 const std::vector<T> & longitude,
-                                 const std::vector<T> & latitude,
-                                 std::vector<int> & partition) {
-  oops::Log::trace() << classname() << "::splitObservations starting" << std::endl;
-
-  // TODO(Benjamin): other distributions
-  if (true) {
-    // Using nearest neighbor
-    atlas::util::IndexKDTree search;
-    search.reserve(geom_->grid().size());
-    size_t jnode = 0;
-    for (const auto & lonLat : geom_->grid().lonlat()) {
-      atlas::PointLonLat pointLonLat(lonLat);
-      pointLonLat.normalise();
-      atlas::PointXY point(pointLonLat);
-      search.insert(point, jnode);
-      ++jnode;
-    }
-    search.build();
-
-    for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-      // Find MPI task
-      atlas::PointLonLat pointLonLat(longitude[jo], latitude[jo]);
-      pointLonLat.normalise();
-
-      // Search nearest neighborass
-      atlas::util::IndexKDTree::ValueList neighbor = search.closestPoints(pointLonLat, 1);
-
-      // Define partition
-      partition[jo] = distribution.partition(neighbor[0].payload());
-      ++nobsOwnVec_[partition[jo]];
-    }
-  }
-
-  oops::Log::trace() << classname() << "::splitObservations done" << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 

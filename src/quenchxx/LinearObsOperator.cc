@@ -62,6 +62,9 @@ void LinearObsOperator::obsEquivTL(const GeoVaLs & gv,
     }
   }
 
+  // Fill halo
+  ovec.fillHalo();
+
   oops::Log::trace() << classname() << "::obsEquivTL done" << std::endl;
 }
 

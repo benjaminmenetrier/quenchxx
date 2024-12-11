@@ -23,12 +23,17 @@ Call as:
 compare.py run_file ref_file float_tolerance integer_difference
 """
 
+import argparse
+import json
+import pathlib
 import re
+import subprocess
 import sys
+import yaml
 
 # Method that searches for int and floats in two lines
 # and compares them one by one
-def line_diff(line1,line2,lnum,ftol,idif):
+def line_diff(line1, line2, lnum, ftol, idif):
 
   #Split line by whitespace or '='
   sline1 = re.split('\s+|=|,|[|]', line1)
@@ -133,74 +138,128 @@ def line_diff(line1,line2,lnum,ftol,idif):
 
   return lineerror
 
+# Main program
 
-# Get file names and tolerance from arguments
-# -------------------------------------------
-file_run = open(sys.argv[1], "r")
-file_ref = open(sys.argv[2], "r")
-ftol = float(sys.argv[3])
-idif = int(sys.argv[4])
+# Parser
+parser = argparse.ArgumentParser()
+parser.add_argument("mpi", help="Number of MPI tasks")
+parser.add_argument("omp", help="Number of OpenMP threads")
+parser.add_argument("exec", help="Test executable")
+parser.add_argument("input", help="Input file")
+args = parser.parse_args()
 
-# Write grep results to a new file
-file_runref = open(str(sys.argv[1])+".ref","w")
+# Read input file
+extension = pathlib.Path(args.input).suffix
 
-# Read reference file
-lines_ref = file_ref.readlines()
+with open(args.input, "r") as file:
+  if extension == ".json":
+    conf = json.load(file)
+  elif extension == ".yaml":
+    conf = yaml.load(file)
 
-# Potential regular expressions found in OOPS Test output
-# -------------------------------------------------------
-# Regex: ABC[12][ABC] (combination of string and int, e.g. AMSUA-NOAA19
-rennm = re.compile('(^\D+[\d]*[\D]*$)')
+# Set number of OpenMP threads TODO(Benjamin)
+#export OMP_NUM_THREADS=${omp}
 
-# Regex: #[ABC][-]12.34[e[+-]12][,] (combination of string and float, e.g. MAX=123.123e-07,
-reflt = re.compile('(^[\D]*?[-]?\d+\.\d+(?:[e][+-]?[\d]+)?[\,]?$)')   #[ABC][-]12.34[e[+-]12][,]
+if "test" in conf:
+  # Find reference file
+  ref_name = conf["test"]["reference filename"]
 
-# Regex: #[-]12345[,] (combination of integer and comma, e.g. 123,
-reint = re.compile('(^[-]?\d+[\,]?$)')
+  # Find tolerance
+  if "float relative tolerance" in conf["test"]:
+    tol = conf["test"]["float relative tolerance"]
+  else:
+    tol = 1.0e-12
 
-# Regex: #YYYY-MM-DDTHH:MN:SSZ[:] (date with potential semi-colon)
-redat = re.compile('(^\d{4}[-]\d{2}[-]\d{2}[T]\d{2}[:]\d{2}[:]\d{2}[Z][\:]?$)')
+  # Log and test outputs extensions
+  flog = ref_name + ".log.out"
+  ftest = ref_name + ".test.out"
 
-# Sub extractions to convert combination of string and number to just number
-reflte = re.compile('([+-]?\d+\.\d+(?:[e][+-]?[\d]+)?)')      #Float extraction (MAX=123.123e-07, -> 123.123e-07)
-reinte = re.compile('([+-]?\d+)')                         #Integer extraction (123, -> 123)
+  # Run job, create log and test outputs
+  command = "mpiexec -n " + str(args.mpi) + " " + args.exec + " " + args.input + " | tee " + flog
+  subprocess.run(command, shell=True)
 
+  # Extract test lines
+  command = "grep -s 'Test     : ' " + flog + " > " + ftest
+  subprocess.run(command, shell=True)
 
-# Loop through the run file and search on test string
-refline = 0
-error = 0
-testfound = False
-for line_run in file_run:
-   if re.search('Test     : ', line_run):
-       #Strip line
-       line_strip = line_run.replace('Test     : ', '')
+  # Compare reference and log output
+  print("Tolerance: " + str(tol))
+  idif = 0
 
-       #Check strings and integers
-       lineerror = line_diff(line_strip,lines_ref[refline],refline+1,ftol,idif)
-       error=error+lineerror
+  # Open flog
+  file_run = open(flog, "r")
 
-       #Write ref file in case update needed
-       file_runref.write(line_strip)
+  # Open 
+  file_ref = open(ref_name, "r")
 
-       #Tick the reference line
-       refline = refline + 1
+  # Write grep results to a new file
+  file_runref = open(flog + ".ref", "w")
 
-       testfound = True
+  # Read reference file
+  lines_ref = file_ref.readlines()
 
-if (len(lines_ref) != refline):
-  print("Test failed. "+str(refline-1)+" matches in run, "+str(len(lines_ref))+" ref")
-  sys.exit(1) #Return failure
+  # Potential regular expressions found in OOPS Test output
+  # -------------------------------------------------------
+  # Regex: ABC[12][ABC] (combination of string and int, e.g. AMSUA-NOAA19
+  rennm = re.compile('(^\D+[\d]*[\D]*$)')
 
-# Close the new reference file
-file_runref.close()
+  # Regex: #[ABC][-]12.34[e[+-]12][,] (combination of string and float, e.g. MAX=123.123e-07,
+  reflt = re.compile('(^[\D]*?[-]?\d+\.\d+(?:[e][+-]?[\d]+)?[\,]?$)')   #[ABC][-]12.34[e[+-]12][,]
 
-# Return status
-if error > 0:
-  sys.exit(1) #Return failure
-if not testfound:
-  print("Did not find any instances of \'Test     : \' in run file")
-  sys.exit(1) #Return failure
+  # Regex: #[-]12345[,] (combination of integer and comma, e.g. 123,
+  reint = re.compile('(^[-]?\d+[\,]?$)')
 
-# Otherwise return success
-sys.exit(0)
+  # Regex: #YYYY-MM-DDTHH:MN:SSZ[:] (date with potential semi-colon)
+  redat = re.compile('(^\d{4}[-]\d{2}[-]\d{2}[T]\d{2}[:]\d{2}[:]\d{2}[Z][\:]?$)')
 
+  # Sub extractions to convert combination of string and number to just number
+  reflte = re.compile('([+-]?\d+\.\d+(?:[e][+-]?[\d]+)?)')      #Float extraction (MAX=123.123e-07, -> 123.123e-07)
+  reinte = re.compile('([+-]?\d+)')                         #Integer extraction (123, -> 123)
+
+  # Loop through the run file and search on test string
+  refline = 0
+  error = 0
+  testfound = False
+  for line_run in file_run:
+     if re.search('Test     : ', line_run):
+         #Strip line
+         line_strip = line_run.replace('Test     : ', '')
+
+         #Check strings and integers
+         lineerror = line_diff(line_strip,lines_ref[refline],refline+1,tol,idif)
+         error = error + lineerror
+
+         #Write ref file in case update needed
+         file_runref.write(line_strip)
+
+         #Tick the reference line
+         refline = refline + 1
+
+         testfound = True
+
+  if (len(lines_ref) != refline):
+    print("Test failed. "+str(refline-1)+" matches in run, "+str(len(lines_ref))+" ref")
+    sys.exit(1) #Return failure
+
+  # Close the new reference file
+  file_runref.close()
+
+  # Close the reference file
+  file_ref.close()
+
+  # Close the run file
+  file_run.close()
+
+  # Return status
+  if error > 0:
+    sys.exit(1) #Return failure
+  if not testfound:
+    print("Did not find any instances of \'Test     : \' in run file")
+    sys.exit(1) #Return failure
+
+  # Otherwise return success
+  sys.exit(0)
+else:
+  # Run job
+  command = "mpiexec -n " + str(args.mpi) + " " + args.exec + " " + args.input
+  subprocess.run(command, shell=True)

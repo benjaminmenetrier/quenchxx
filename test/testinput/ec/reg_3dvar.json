@@ -205,5 +205,8 @@
         "obsvalue": "oman"
       }
     }
+  },
+  "test": {
+    "reference filename": "testref/ec/reg_3dvar.ref"
   }
 }

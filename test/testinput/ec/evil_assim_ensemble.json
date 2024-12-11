@@ -146,5 +146,8 @@
         }
       }
     }
+  },
+  "test": {
+    "reference filename": "testref/ec/evil_assim_ensemble.ref"
   }
 }

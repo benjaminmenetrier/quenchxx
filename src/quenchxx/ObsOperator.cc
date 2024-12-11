@@ -66,6 +66,9 @@ void ObsOperator::obsEquiv(const GeoVaLs & gv,
     }
   }
 
+  // Fill halo
+  ovec.fillHalo();
+
   oops::Log::trace() << classname() << "::obsEquiv done" << std::endl;
 }
 

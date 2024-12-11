@@ -56,5 +56,8 @@
   "Assimilation Window": {
     "Begin": "2010-01-01T12:00:00Z",
     "End": "2010-01-01T12:00:00Z"
+  },
+  "test": {
+    "reference filename": "testref/ec/evil_makeobs.ref"
   }
 }

@@ -146,5 +146,8 @@
         "obsvalue": "oman"
       }
     }
+  },
+  "test": {
+    "reference filename": "testref/ec/evil_dual_3dvar.ref"
   }
 }

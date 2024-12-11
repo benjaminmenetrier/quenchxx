@@ -161,5 +161,8 @@
   "variance reduction": {
     "mpi pattern": "%mpi%",
     "filepath": "testdata/evil_control_variance_D_%iteration%_%mpi%"
+  },
+  "test": {
+    "reference filename": "testref/ec/evil_control_update_D.ref"
   }
 }

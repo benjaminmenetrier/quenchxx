@@ -77,8 +77,10 @@ class ObsVector : public util::Printable,
   Eigen::VectorXd packEigen(const ObsVector &) const;
   size_t packEigenSize(const ObsVector &) const;
 
+  void fillHalo() const
+    {obsSpace_.fillHalo(data_);}
+
  private:
-  void fillHalo();
   void print(std::ostream &) const;
 
   const eckit::mpi::Comm & comm_;

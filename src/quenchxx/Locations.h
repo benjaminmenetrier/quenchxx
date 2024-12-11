@@ -16,8 +16,9 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "quenchxx/ObsSpace.h"
+
 namespace quenchxx {
-  class ObsSpace;
 
 // -----------------------------------------------------------------------------
 /// Locations class
@@ -40,10 +41,6 @@ class Locations : public util::Printable,
 /// Local
   const ObsSpace & obsSpace() const
     {return obsSpace_;}
-  int size() const
-    {return locs_.size();}
-  int size(const size_t & jt) const
-    {return nobsLocVec_[jt];}
   const atlas::Point3 & operator[](const int & ii) const
     {return locs_[ii];}
   const atlas::Grid & grid() const
@@ -54,7 +51,7 @@ class Locations : public util::Printable,
 
   const ObsSpace & obsSpace_;
   std::vector<atlas::Point3> locs_;
-  std::vector<int> nobsLocVec_;
+  std::vector<int> nobsOwnVec_;
   atlas::Grid grid_;
 };
 

@@ -59,5 +59,8 @@
       "date": "2010-01-01T18:00:00Z",
       "filepath": "testdata/reg_truth_18"
     }
-  }]
+  }],
+  "test": {
+    "reference filename": "testref/reg_truth_18.ref"
+  }
 }

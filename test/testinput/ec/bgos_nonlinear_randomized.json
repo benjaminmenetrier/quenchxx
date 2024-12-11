@@ -111,5 +111,8 @@
   "use nonlinear observation operator": "true",
   "variance in observation space": {
     "obsvalue": "Variance"
+  },
+  "test": {
+    "reference filename": "testref/ec/bgos_nonlinear_randomized.ref"
   }
 }

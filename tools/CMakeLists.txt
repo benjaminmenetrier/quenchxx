@@ -3,7 +3,6 @@ list( APPEND tool_files
     check_diff.sh
     check_diff_recursively.sh
     compare.py
-    compare.sh
     cpplint.py
 )
 

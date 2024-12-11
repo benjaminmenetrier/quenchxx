@@ -300,5 +300,8 @@
         "filepath": "testdata/evil_ensemble_variance_primal_ens_S"
       }
     }
-  ]
+  ],
+  "test": {
+    "reference filename": "testref/ec/evil_ensemble_variance.ref"
+  }
 }

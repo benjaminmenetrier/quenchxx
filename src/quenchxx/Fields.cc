@@ -1590,7 +1590,7 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
   std::vector<int> partition(nobsGlb);
   size_t joGlb = 0;
   for (size_t jt = 0; jt < geom_->getComm().size(); ++jt) {
-    for (int joLoc = 0; joLoc < locs.size(jt); ++joLoc) {
+    for (int joOwn = 0; joOwn < locs.obsSpace().sizeOwn(jt); ++joOwn) {
       partition[joGlb] = jt;
       ++joGlb;
     }
@@ -1642,10 +1642,10 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
     std::vector<std::array<size_t, 2>> verStencil;
     std::vector<std::array<double, 2>> verWeights;
     std::vector<size_t> verStencilSize;
-    verStencil.resize(locs.size());
-    verWeights.resize(locs.size());
-    verStencilSize.resize(locs.size());
-    for (int jo = 0; jo < locs.size(); ++jo) {
+    verStencil.resize(locs.obsSpace().sizeOwn());
+    verWeights.resize(locs.obsSpace().sizeOwn());
+    verStencilSize.resize(locs.obsSpace().sizeOwn());
+    for (int jo = 0; jo < locs.obsSpace().sizeOwn(); ++jo) {
       if (geom_->levels(var) == 1) {
         // No vertical interpolation
         verStencil[jo][0] = 0;

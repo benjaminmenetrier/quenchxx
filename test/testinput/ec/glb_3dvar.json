@@ -121,6 +121,7 @@
           "version": "default",
           "tstep": "PT0H",
           "trajectory": {
+            "tstep": "PT6H",
             "forcing": {
               "variables": ["air_temperature"]
             }
@@ -155,6 +156,7 @@
           "version": "default",
           "tstep": "PT0H",
           "trajectory": {
+            "tstep": "PT6H",
             "forcing": {
               "variables": ["air_temperature"]
             }
@@ -172,5 +174,8 @@
         "obsvalue": "oman"
       }
     }
+  },
+  "test": {
+    "reference filename": "testref/ec/glb_3dvar.ref"
   }
 }

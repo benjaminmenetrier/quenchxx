@@ -52,5 +52,9 @@
   "Assimilation Window": {
     "Begin": "2010-01-01T18:00:00Z",
     "End": "2010-01-01T18:00:00Z"
+  },
+  "test": {
+    "reference filename": "testref/glb_makeobs_18.ref",
+    "float relative tolerance": 1.0e-8
   }
 }

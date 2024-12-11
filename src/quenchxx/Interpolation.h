@@ -91,6 +91,7 @@ class Interpolation {
 
   // OOPS unstructured interpolation
   std::shared_ptr<oops::UnstructuredInterpolator> unstructuredInterp_;
+  std::vector<int> ghostVector_;
 
   // Vertical interpolations
   std::unordered_map<std::string, std::vector<std::array<size_t, 2>>> verStencil_;

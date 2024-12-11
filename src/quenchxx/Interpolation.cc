@@ -12,6 +12,9 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/FieldSetHelpers.h"
+#include "oops/util/FieldSetOperations.h"
+
+#include "quenchxx/VariablesSwitch.h"
 
 // -----------------------------------------------------------------------------
 
@@ -39,11 +42,28 @@ Interpolation::Interpolation(const Geometry & geom,
       atlas::util::Config("type", "regional-linear-2d"),
       geom.functionSpace(), dstFspace);
   } else if (type == "unstructured") {
+    // Get ghost points
+    const auto ghostView = atlas::array::make_view<int, 1>(dstFspace.ghost());
+    for (atlas::idx_t jnode = 0; jnode < dstFspace.ghost().shape(0); ++jnode) {
+      ghostVector_.push_back(ghostView(jnode));
+    }
+
+    // Get longitudes/latitudes
     std::vector<double> lons;
     std::vector<double> lats;
-    // TODO(Benjamin): fill lons/lats from dstFspace
+    const auto lonLatField = dstFspace.lonlat();
+    const auto lonLatView = atlas::array::make_view<double, 2>(lonLatField);
+    for (atlas::idx_t jnode = 0; jnode < lonLatField.shape(0); ++jnode) {
+      ghostVector_.push_back(ghostView(jnode));
+      if (ghostVector_[jnode] == 0) {
+        lons.push_back(lonLatView(jnode, 0));
+        lats.push_back(lonLatView(jnode, 1));
+      }
+    }
+std::cout << "ghostVector_: " << ghostVector_ << std::endl;
+    // Setup unstructured interpolator
     unstructuredInterp_ = std::make_shared<oops::UnstructuredInterpolator>(geom.interpolation(),
-      geom.generic(), lons, lats);
+      geom.generic(), lats, lons);
   } else {
     throw eckit::Exception("wrong interpolation type", Here());
   }
@@ -63,6 +83,31 @@ void Interpolation::execute(const atlas::FieldSet & srcFieldSet,
   if (regionalInterp_) {
     regionalInterp_->execute(srcFieldSet, tgtFieldSet);
   }
+  if (unstructuredInterp_) {
+    // Exchange FieldSet halo
+    atlas::FieldSet fset = util::copyFieldSet(srcFieldSet);
+    fset.haloExchange();
+
+    // Apply unstructured interpolator
+    const varns::Variables vars(fset.field_names());
+    std::vector<double> vals;
+    unstructuredInterp_->apply(vars, fset, vals);
+
+    // Format data
+    size_t index = 0;
+    for (auto & tgtField : tgtFieldSet) {
+      auto tgtView = atlas::array::make_view<double, 2>(tgtField);
+      for (atlas::idx_t jlevel = 0; jlevel < tgtView.shape(1); ++jlevel) {
+        for (atlas::idx_t jnode = 0; jnode < tgtView.shape(0); ++jnode) {
+          if (ghostVector_[jnode] == 0) {
+            tgtView(jnode, jlevel) = vals[index];
+            ++index;
+          }
+        }
+      }
+    }
+    tgtFieldSet.haloExchange();
+  }
 
   oops::Log::trace() << classname() << "::execute done" << std::endl;
 }
@@ -78,6 +123,28 @@ void Interpolation::executeAdjoint(atlas::FieldSet & srcFieldSet,
   }
   if (regionalInterp_) {
     regionalInterp_->execute_adjoint(srcFieldSet, tgtFieldSet);
+  }
+  if (unstructuredInterp_) {
+    // Format data
+    std::vector<double> vals;
+    for (const auto & tgtField : tgtFieldSet) {
+      const auto tgtView = atlas::array::make_view<double, 2>(tgtField);
+      for (atlas::idx_t jlevel = 0; jlevel < tgtField.shape(1); ++jlevel) {
+        for (atlas::idx_t jnode = 0; jnode < tgtField.shape(0); ++jnode) {
+          if (ghostVector_[jnode] == 0) {
+            vals.push_back(tgtView(jnode, jlevel));
+          }
+        }
+      }
+    }
+
+    // Apply unstructured interpolator, adjoint
+    const varns::Variables vars(tgtFieldSet.field_names());
+    unstructuredInterp_->applyAD(vars, srcFieldSet, vals);
+
+    // Exchange FieldSet halo, adjoint
+    srcFieldSet.adjointHaloExchange();
+    srcFieldSet.set_dirty();
   }
 
   oops::Log::trace() << classname() << "::executeAdjoint done" << std::endl;

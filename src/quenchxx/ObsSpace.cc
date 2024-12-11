@@ -53,15 +53,16 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
   nameOut_.clear();
   if (config.has("ObsData")) {
     const eckit::LocalConfiguration dataConfig(config, "ObsData");
-    if (dataConfig.has("distribution")) {
+    if (dataConfig.has("distribution") && config.has("obs localizations")) {
+      // Get distribution
       distribution_ = dataConfig.getSubConfiguration("distribution");
-      if (config.has("obs localizations")) {
-        const std::vector<eckit::LocalConfiguration> configs =
-          config.getSubConfigurations("obs localizations");
-        ASSERT(configs.size() == 1);  // No use for more than one localization so far
-        const double horLengthScale = configs[0].getDouble("horizontal length-scale");
-        distribution_.set("horizontal length-scale", horLengthScale);
-      }
+
+      // Get horizontal length-scale
+      const std::vector<eckit::LocalConfiguration> configs =
+      config.getSubConfigurations("obs localizations");
+      ASSERT(configs.size() == 1);  // No use for more than one localization so far
+      const double horLengthScale = configs[0].getDouble("horizontal length-scale");
+      distribution_.set("horizontal length-scale", horLengthScale);
     }
     if (lscreened) {
       if (dataConfig.has("ObsDataInScreened")) {
@@ -85,6 +86,20 @@ ObsSpace::ObsSpace(const eckit::Configuration & config,
       }
     }
   }
+
+  // Determine seed for random number generator that is reproducible when re-running
+  // but does not repeat itself over analysis cycles, ensemble members or obs type
+  util::DateTime ref(1623, 6, 19, 0, 0, 1);
+  ASSERT(bgn > ref);
+  util::Duration dt(bgn - ref);
+  seed_ = dt.toSeconds();
+
+  // Won't repeat if more seconds between analysis cycles than members in EDA
+  seed_ += config.getInt("obs perturbations seed", 0);
+
+  //           31622400 seconds max in 1 year
+  //        12197962800 seed at this step for 2010-01-01T03:00:00Z
+  seed_ += 100000000000;  // * instance_;
 
   oops::Log::trace() << classname() << "::ObsSpace done" << std::endl;
 }
@@ -131,7 +146,7 @@ void ObsSpace::putdb(const atlas::FieldSet & fset) const {
     // FieldSet name not found, inserting new FieldSet
     atlas::FieldSet dataFset;
     util::copyFieldSet(fset, dataFset);
-    data_.push_back(dataFset);
+    data_.emplace_back(dataFset);
   }
 
   oops::Log::trace() << classname() << "::putdb done" << std::endl;
@@ -189,7 +204,7 @@ std::vector<size_t> ObsSpace::timeSelect(const util::DateTime & t1,
   oops::Log::trace() << classname() << "::timeSelect starting" << std::endl;
 
   std::vector<size_t> mask;
-  for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+  for (size_t jo = 0; jo < nobsOwn_; ++jo) {
     if (t1 == t2) {
       if (times_[jo] == t1) {
         mask.push_back(jo);
@@ -211,14 +226,14 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   oops::Log::trace() << classname() << "::generateDistribution starting" << std::endl;
 
   // Parameters
-  const std::vector<double> latitude = config.getDoubleVector("lats");
+  const std::vector<float> latitude = config.getFloatVector("lats");
   nobsGlb_ = latitude.size();
-  const std::vector<double> longitude = config.getDoubleVector("lons");
+  const std::vector<float> longitude = config.getFloatVector("lons");
   ASSERT(longitude.size() == nobsGlb_);
   const std::vector<int> dateTime = config.getIntVector("dateTimes");
   ASSERT(dateTime.size() == nobsGlb_);
   const std::string vertCoordType = config.getString("vert coord type");
-  const std::vector<double> vertCoords = config.getDoubleVector("vert coords");
+  const std::vector<float> vertCoords = config.getFloatVector("vert coords");
   ASSERT(vertCoords.size() == nobsGlb_);
   const std::string epoch = config.getString("epoch");
   const std::vector<double> obsErrors = config.getDoubleVector("obs errors");
@@ -228,11 +243,8 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   std::vector<int> timesGlb;
   std::vector<double> locsGlb;
 
-  // Local number of observations
+  // Number of owned observations
   nobsOwnVec_.resize(comm_.size());
-
-  // Define source grid horizontal distribution
-  const atlas::grid::Distribution distribution = geom_->partitioner().partition(geom_->grid());
 
   if (comm_.rank() == 0) {
     // Resize vectors
@@ -244,7 +256,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
 
     // Split observations between tasks
     std::vector<int> partition(nobsGlb_);
-    splitObservations<double>(distribution, longitude, latitude, partition);
+    splitObservations(longitude, latitude, partition);
 
     // Reorder vectors
     timesGlb.resize(6*nobsGlb_);
@@ -310,7 +322,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   fset.name() = config.getString("obserror");
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
     atlas::Field field(vars_[jvar].name(), atlas::array::make_datatype<double>(),
-      atlas::array::make_shape(nobsOwn_, 1));
+      atlas::array::make_shape(nobsLoc_, 1));
     auto view = atlas::array::make_view<double, 2>(field);
     for (size_t jo = 0; jo < nobsOwn_; ++jo) {
       view(jo, 0) = obsErrors[jvar];
@@ -318,12 +330,16 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
     fset.add(field);
   }
 
-  // Save FieldSet
-  nobsLoc_ = nobsOwn_;
-  this->putdb(fset);
+  // Setup halo
+  setupHalo();
 
   // Fill halo
-  this->fillHalo();
+  for (auto & item : data_) {
+    fillHalo(item);
+  }
+
+  // Save FieldSet
+  putdb(fset);
 
   oops::Log::trace() << classname() << "::generateDistribution done" << std::endl;
 }
@@ -347,14 +363,14 @@ void ObsSpace::screenObservations(const ObsVector & dep,
 
   // Define whether observations are screened or not
   // TODO(Benjamin): more clever screening
-  std::vector<bool> validObs(nobsLoc_);
-  for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+  std::vector<bool> validObs(nobsOwn_);
+  for (size_t jo = 0; jo < nobsOwn_; ++jo) {
     validObs[jo] = true;
   }
-  const int nobsLocScr = std::count(validObs.cbegin(), validObs.cend(), true);
+  const int nobsOwnScr = std::count(validObs.cbegin(), validObs.cend(), true);
 
   // Apply screening on time, location and data
-  for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+  for (size_t jo = 0; jo < nobsOwn_; ++jo) {
     if (validObs[jo]) {
       screenedTimes_.push_back(times_[jo]);
       screenedLocations_.push_back(locs_[jo]);
@@ -365,11 +381,11 @@ void ObsSpace::screenObservations(const ObsVector & dep,
     fset.name() = dataFset.name();
     for (const auto & dataField : dataFset) {
       atlas::Field field(dataField.name(), atlas::array::make_datatype<double>(),
-        atlas::array::make_shape(nobsLocScr, 1));
+        atlas::array::make_shape(nobsOwnScr, 1));
       const auto dataView = atlas::array::make_view<double, 2>(dataField);
       auto view = atlas::array::make_view<double, 2>(field);
       size_t joScr = 0;
-      for (size_t jo = 0; jo < nobsLoc_; ++jo) {
+      for (size_t jo = 0; jo < nobsOwn_; ++jo) {
         if (validObs[jo]) {
           view(joScr, 0) = dataView(jo, 0);
           ++joScr;
@@ -377,13 +393,60 @@ void ObsSpace::screenObservations(const ObsVector & dep,
       }
       fset.add(field);
     }
-    screenedData_.push_back(fset);
+    screenedData_.emplace_back(fset);
   }
 
   // Write screened observations
   write(nameOut_, Write::Screened);
 
   oops::Log::trace() << classname() << "::screenObservations done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
+  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl; 
+
+  // TODO(Benjamin): only if sum(nobsLoc) > nobsGlb
+
+  // Format data
+  std::vector<double> dataSendBuf(vars_.size()*nSend_);
+  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+    const atlas::Field field = fset[vars_[jvar].name()];
+    const auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t jj = 0; jj < nSend_; ++jj) {
+      size_t jo = sendBufIndex_[jj];
+      dataSendBuf[vars_.size()*jj+jvar] = view(jo, 0);
+    }
+  }
+
+  // Communicate time and locations
+  std::vector<double> dataRecvBuf(vars_.size()*nRecv_);
+  comm_.allToAllv(dataSendBuf.data(), dataSendCounts_.data(), dataSendDispls_.data(),
+    dataRecvBuf.data(), dataRecvCounts_.data(), dataRecvDispls_.data());
+
+  // Format data
+  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+    atlas::Field field = fset[vars_[jvar].name()];
+    field.resize(atlas::array::make_shape(nobsLoc_, 1));
+    auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t jj = 0; jj < nRecv_; ++jj) {
+      view(nobsOwn_+jj, 0) = dataRecvBuf[vars_.size()*jj+jvar];
+    }
+  }
+
+  oops::Log::trace() << classname() << "::fillHalo done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::print(std::ostream & os) const {
+  oops::Log::trace() << classname() << "::print starting" << std::endl;
+
+  os << "ObsSpace: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
+  os << "ObsSpace: file in = " << nameIn_ << ", file out = " << nameOut_ << std::endl;
+
+  oops::Log::trace() << classname() << "::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -400,9 +463,6 @@ void ObsSpace::read(const std::string & filePath) {
 
   // Counts and displacements
   nobsOwnVec_.resize(comm_.size());
-
-  // Define source grid horizontal distribution
-  const atlas::grid::Distribution distribution = geom_->partitioner().partition(geom_->grid());
 
   // NetCDF IDs
   int retval, ncid, nobs_id, dateTime_id, order_id, longitude_id, latitude_id, height_id, data_id;
@@ -467,7 +527,7 @@ void ObsSpace::read(const std::string & filePath) {
 
     // Split observations between tasks
     partition.resize(nobsGlb_);
-    splitObservations<float>(distribution, longitude, latitude, partition);
+    splitObservations(longitude, latitude, partition);
 
     // Get ordered time and location
     timesGlb.resize(6*nobsGlb_);
@@ -593,7 +653,7 @@ void ObsSpace::read(const std::string & filePath) {
         }
         fset.add(field);
       }
-      data_.push_back(fset);
+      data_.emplace_back(fset);
     }
   }
 
@@ -602,8 +662,13 @@ void ObsSpace::read(const std::string & filePath) {
     if (retval = nc_close(ncid)) ERR(retval);
   }
 
-  // Halo expansion
-  this->fillHalo();
+  // Setup halo
+  setupHalo();
+
+  // Fill halo
+  for (auto & item : data_) {
+    fillHalo(item);
+  }
 
   oops::Log::trace() << classname() << "::read done" << std::endl;
 }
@@ -880,16 +945,17 @@ void ObsSpace::write(const std::string & filePath,
 
 // -----------------------------------------------------------------------------
 
-void ObsSpace::fillHalo() {
-  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
+void ObsSpace::setupHalo() const {
+  oops::Log::trace() << classname() << "::setupHalo starting" << std::endl;
 
   if (distribution_.empty()) {
-    // No halo
     nobsLoc_ = nobsOwn_;
   } else {
-    // Get center, radius and length-scale
+    // Get center and radius
     const std::vector<double> center = distribution_.getDoubleVector("center");
     const double radius = distribution_.getDouble("radius");
+
+    // Get horizontal length-scale
     const double horLengthScale = distribution_.getDouble("horizontal length-scale");
 
     // Allgather center and radius
@@ -905,7 +971,7 @@ void ObsSpace::fillHalo() {
     for (size_t jt = 0; jt < comm_.size(); ++jt) {
       if (jt != comm_.rank()) {
         const atlas::PointLonLat centerPoint({centerLonVec[jt], centerLatVec[jt]});
-        const double haloSize = radiusVec[jt]+horLengthScale;
+        const double haloSize = radiusVec[jt]+100*horLengthScale;
 
         for (size_t jo = 0; jo < nobsOwn_; ++jo) {
           // Compute distance to task center
@@ -1002,62 +1068,29 @@ void ObsSpace::fillHalo() {
         timeRecvBuf[6*jj+3], timeRecvBuf[6*jj+4], timeRecvBuf[6*jj+5]));
       locs_.push_back(atlas::Point3(locsRecvBuf[3*jj], locsRecvBuf[3*jj+1], locsRecvBuf[3*jj+2]));
     }
-
-    for (auto & fset : data_) {
-      // Fill halo of FieldSet
-      this->fillHalo(fset);
-    }
   }
 
-  oops::Log::trace() << classname() << "::fillHalo done" << std::endl;
+  oops::Log::trace() << classname() << "::setupHalo done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
-  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
+void ObsSpace::splitObservations(const std::vector<float> & longitude,
+                                 const std::vector<float> & latitude,
+                                 std::vector<int> & partition) {
+  oops::Log::trace() << classname() << "::splitObservations starting" << std::endl;
 
-  if (!distribution_.empty()) {
-    // Format data
-    std::vector<double> dataSendBuf(vars_.size()*nSend_);
-    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-      const atlas::Field field = fset[vars_[jvar].name()];
-      ASSERT(field.shape(0) == nobsOwn_);
-      const auto view = atlas::array::make_view<double, 2>(field);
-      for (size_t jj = 0; jj < nSend_; ++jj) {
-        size_t jo = sendBufIndex_[jj];
-        dataSendBuf[vars_.size()*jj+jvar] = view(jo, 0);
-      }
-    }
-
-    // Communicate time and locations
-    std::vector<double> dataRecvBuf(vars_.size()*nRecv_);
-    comm_.allToAllv(dataSendBuf.data(), dataSendCounts_.data(), dataSendDispls_.data(),
-      dataRecvBuf.data(), dataRecvCounts_.data(), dataRecvDispls_.data());
-
-    // Append halo to owned data
-    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-      atlas::Field field = fset[vars_[jvar].name()];
-      field.resize(atlas::array::make_shape(nobsLoc_, 1));
-      auto view = atlas::array::make_view<double, 2>(field);
-      for (size_t jj = 0; jj < nRecv_; ++jj) {
-        view(nobsOwn_+jj, 0) = dataRecvBuf[vars_.size()*jj+jvar];
-      }
+  // TODO(Benjamin): other distributions
+  if (true) {
+    for (size_t jo = 0; jo < nobsGlb_; ++jo) {
+      // Define partition
+      partition[jo] = geom_->generic().closestTask(static_cast<double>(latitude[jo]),
+                                                   static_cast<double>(longitude[jo]));
+      ++nobsOwnVec_[partition[jo]];
     }
   }
 
-  oops::Log::trace() << classname() << "::fillHalo done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsSpace::print(std::ostream & os) const {
-  oops::Log::trace() << classname() << "::print starting" << std::endl;
-
-  os << "ObsSpace: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
-  os << "ObsSpace: file in = " << nameIn_ << ", file out = " << nameOut_ << std::endl;
-
-  oops::Log::trace() << classname() << "::print done" << std::endl;
+  oops::Log::trace() << classname() << "::splitObservations done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

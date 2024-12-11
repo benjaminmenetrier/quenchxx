@@ -121,5 +121,8 @@
   },
   "variance in observation space": {
     "obsvalue": "Variance"
+  },
+  "test": {
+    "reference filename": "testref/ec/bgos_linear_ensemble.ref"
   }
 }

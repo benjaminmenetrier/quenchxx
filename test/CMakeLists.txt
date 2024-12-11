@@ -14,12 +14,11 @@ endmacro()
 macro( create_test name mpi exec )
     if( ECSABER )
         ecbuild_add_test( TARGET quenchxx_test_${name}_${mpi}
-                          COMMAND ${CMAKE_BINARY_DIR}/bin/quenchxx_compare.sh
-                          ARGS ${CMAKE_BINARY_DIR}/bin/quenchxx_compare.py
-                               ${mpi}
+                          COMMAND ${CMAKE_BINARY_DIR}/bin/quenchxx_compare.py
+                          ARGS ${mpi}
                                1
-                               "${CMAKE_BINARY_DIR}/bin/quenchxx_${exec}.x testinput/ec/${name}.json"
-                               ${CMAKE_CURRENT_BINARY_DIR}/testref/ec/${name}.ref
+                               ${CMAKE_BINARY_DIR}/bin/quenchxx_${exec}.x
+                               testinput/ec/${name}.json
                           DEPENDS quenchxx_${exec}.x )
     else()
         ecbuild_add_test( TARGET   quenchxx_test_${name}_${mpi}
@@ -200,6 +199,38 @@ testinput/jedi/reg_letkf.yaml
 # ----------------------
 list( APPEND quenchxx_testref
 
+# COMMON
+
+# GLOBAL
+testref/glb_background_06.ref
+testref/glb_background_12.ref
+testref/glb_background_18.ref
+testref/glb_ensemble_06.ref
+testref/glb_ensemble_12.ref
+testref/glb_ensemble_18.ref
+testref/glb_makeobs_06.ref
+testref/glb_makeobs_12.ref
+testref/glb_makeobs_18.ref
+testref/glb_stddev.ref
+testref/glb_truth_06.ref
+testref/glb_truth_12.ref
+testref/glb_truth_18.ref
+
+# REGIONAL
+testref/reg_background_06.ref
+testref/reg_background_12.ref
+testref/reg_background_18.ref
+testref/reg_ensemble_06.ref
+testref/reg_ensemble_12.ref
+testref/reg_ensemble_18.ref
+testref/reg_makeobs_06.ref
+testref/reg_makeobs_12.ref
+testref/reg_makeobs_18.ref
+testref/reg_stddev.ref
+testref/reg_truth_06.ref
+testref/reg_truth_12.ref
+testref/reg_truth_18.ref
+
 # EC
 
 # BGOS
@@ -238,41 +269,15 @@ testref/ec/evil_truth.ref
 testref/ec/glb_3dvar.ref
 testref/ec/glb_3densvar.ref
 testref/ec/glb_4densvar.ref
-testref/ec/glb_background_06.ref
-testref/ec/glb_background_12.ref
-testref/ec/glb_background_18.ref
-testref/ec/glb_ensemble_06.ref
-testref/ec/glb_ensemble_12.ref
-testref/ec/glb_ensemble_18.ref
 testref/ec/glb_hofx.ref
 testref/ec/glb_letkf.ref
-testref/ec/glb_makeobs_06.ref
-testref/ec/glb_makeobs_12.ref
-testref/ec/glb_makeobs_18.ref
-testref/ec/glb_stddev.ref
-testref/ec/glb_truth_06.ref
-testref/ec/glb_truth_12.ref
-testref/ec/glb_truth_18.ref
 testref/ec/glb_3dvar.ref
 
 # REGIONAL
 testref/ec/reg_3densvar.ref
 testref/ec/reg_4densvar.ref
-testref/ec/reg_background_06.ref
-testref/ec/reg_background_12.ref
-testref/ec/reg_background_18.ref
-testref/ec/reg_ensemble_06.ref
-testref/ec/reg_ensemble_12.ref
-testref/ec/reg_ensemble_18.ref
 testref/ec/reg_hofx.ref
 testref/ec/reg_letkf.ref
-testref/ec/reg_makeobs_06.ref
-testref/ec/reg_makeobs_12.ref
-testref/ec/reg_makeobs_18.ref
-testref/ec/reg_stddev.ref
-testref/ec/reg_truth_06.ref
-testref/ec/reg_truth_12.ref
-testref/ec/reg_truth_18.ref
 
 # SYNTHETIC DATA
 testref/ec/synthetic_data_generate.ref
@@ -294,38 +299,12 @@ testref/jedi/genint_hofx3d_nonuni_lonlat.ref
 testref/jedi/genint_hofx3d_lambertCC.ref
 
 # GLOBAL
-testref/jedi/glb_stddev.ref
-testref/jedi/glb_truth_06.ref
-testref/jedi/glb_truth_12.ref
-testref/jedi/glb_truth_18.ref
-testref/jedi/glb_background_06.ref
-testref/jedi/glb_background_12.ref
-testref/jedi/glb_background_18.ref
-testref/jedi/glb_ensemble_06.ref
-testref/jedi/glb_ensemble_12.ref
-testref/jedi/glb_ensemble_18.ref
-testref/jedi/glb_makeobs_06.ref
-testref/jedi/glb_makeobs_12.ref
-testref/jedi/glb_makeobs_18.ref
 testref/jedi/glb_3dvar.ref
 testref/jedi/glb_3densvar.ref
 testref/jedi/glb_4densvar.ref
 testref/jedi/glb_letkf.ref
 
 # REGIONAL
-testref/jedi/reg_stddev.ref
-testref/jedi/reg_truth_06.ref
-testref/jedi/reg_truth_12.ref
-testref/jedi/reg_truth_18.ref
-testref/jedi/reg_background_06.ref
-testref/jedi/reg_background_12.ref
-testref/jedi/reg_background_18.ref
-testref/jedi/reg_ensemble_06.ref
-testref/jedi/reg_ensemble_12.ref
-testref/jedi/reg_ensemble_18.ref
-testref/jedi/reg_makeobs_06.ref
-testref/jedi/reg_makeobs_12.ref
-testref/jedi/reg_makeobs_18.ref
 testref/jedi/reg_3dvar.ref
 testref/jedi/reg_3densvar.ref
 testref/jedi/reg_4densvar.ref

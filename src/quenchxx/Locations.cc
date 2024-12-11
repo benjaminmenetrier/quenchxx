@@ -24,28 +24,19 @@ Locations::Locations(const ObsSpace & obsSpace,
   locs_ = obsSpace_.locations(t1, t2);
 
   // Get vector of observation lon/lat
-  std::vector<double> obsLonLatLoc;
-  for (size_t jo = 0; jo < locs_.size(); ++jo) {
-    obsLonLatLoc.push_back(locs_[jo][0]);
-    obsLonLatLoc.push_back(locs_[jo][1]);
-  }
-
-  // Gather number of observations
-  const int nobsLoc = locs_.size();
-  nobsLocVec_.resize(obsSpace_.getComm().size());
-  obsSpace_.getComm().allGather(nobsLoc, nobsLocVec_.begin(), nobsLocVec_.end());
-  size_t nobsGlb = 0;
-  for (size_t jt = 0; jt < obsSpace_.getComm().size(); ++jt) {
-    nobsGlb += nobsLocVec_[jt];
+  std::vector<double> obsLonLatOwn;
+  for (size_t jo = 0; jo < obsSpace.sizeOwn(); ++jo) {
+    obsLonLatOwn.push_back(locs_[jo][0]);
+    obsLonLatOwn.push_back(locs_[jo][1]);
   }
 
   // Allocation
-  std::vector<double> obsLonLatGlb(2*nobsGlb);
+  std::vector<double> obsLonLatGlb(2*obsSpace.sizeGlb());
 
   // Define counts and displacements
   std::vector<int> counts(obsSpace_.getComm().size());
   for (size_t jt = 0; jt < obsSpace_.getComm().size(); ++jt) {
-    counts[jt] = 2*nobsLocVec_[jt];
+    counts[jt] = 2*obsSpace.sizeOwn(jt);
   }
   std::vector<int> displs;
   displs.push_back(0);
@@ -54,7 +45,7 @@ Locations::Locations(const ObsSpace & obsSpace,
   }
 
   // AllGatherv lon/lat
-  obsSpace_.getComm().allGatherv(obsLonLatLoc.begin(), obsLonLatLoc.end(), obsLonLatGlb.begin(),
+  obsSpace_.getComm().allGatherv(obsLonLatOwn.begin(), obsLonLatOwn.end(), obsLonLatGlb.begin(),
     counts.data(), displs.data());
 
   // Create observation grid

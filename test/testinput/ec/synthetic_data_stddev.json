@@ -37,5 +37,8 @@
       "date": "2010-01-01T12:00:00Z",
       "filepath": "testdata/synthetic_data_stddev"
     }
-  }]
+  }],
+  "test": {
+    "reference filename": "testref/synthetic_data_stddev.ref"
+  }
 }

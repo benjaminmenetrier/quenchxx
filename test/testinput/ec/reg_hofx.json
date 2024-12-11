@@ -49,5 +49,8 @@
   "Assimilation Window": {
     "Begin": "2010-01-01T12:00:00Z",
     "Length": "PT0S"
+  },
+  "test": {
+    "reference filename": "testref/ec/reg_hofx.ref"
   }
 }

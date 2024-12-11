@@ -70,5 +70,8 @@
   "output states": {
     "filepath": "testdata/reg_bkg_18",
     "date": "2010-01-01T18:00:00Z"
+  },
+  "test": {
+    "reference filename": "testref/reg_background_18.ref"
   }
 }

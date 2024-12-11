@@ -37,5 +37,8 @@
       "date": "2010-01-01T12:00:00Z",
       "filepath": "testdata/bgos_stddev"
     }
-  }]
+  }],
+  "test": {
+    "reference filename": "testref/ec/bgos_stddev.ref"
+  }
 }

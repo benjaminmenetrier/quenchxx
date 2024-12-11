@@ -59,5 +59,8 @@
   "output states": {
     "filepath": "testdata/glb_bkg_12",
     "date": "2010-01-01T12:00:00Z"
+  },
+  "test": {
+    "reference filename": "testref/glb_background_12.ref"
   }
 }

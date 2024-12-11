@@ -64,5 +64,8 @@
   "output states": {
     "filepath": "testdata/bgos_bkg",
     "date": "2010-01-01T12:00:00Z"
+  },
+  "test": {
+    "reference filename": "testref/ec/bgos_background.ref"
   }
 }

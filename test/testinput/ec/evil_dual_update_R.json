@@ -150,5 +150,8 @@
   "variance reduction": {
     "mpi pattern": "%mpi%",
     "filepath": "testdata/evil_dual_variance_R_%iteration%_%mpi%"
+  },
+  "test": {
+    "reference filename": "testref/ec/evil_dual_update_R.ref"
   }
 }

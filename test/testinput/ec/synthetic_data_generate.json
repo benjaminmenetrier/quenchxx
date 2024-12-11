@@ -130,5 +130,8 @@
   },
   "first-guess departure": {
     "obsvalue": "fg_depar@body"
+  },
+  "test": {
+    "reference filename": "testref/synthetic_data_generate.ref"
   }
 }

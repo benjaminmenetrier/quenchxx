@@ -17,7 +17,9 @@
     ],
     "halo": "1"
   },
-  "model": {},
+  "model": {
+    "tstep": "PT6H"
+  },
   "background": {
     "members from template": {
       "template": {
@@ -25,7 +27,7 @@
           {
             "date": "2010-01-01T12:00:00Z",
             "variables": ["air_temperature"],
-            "filepath": "testdata/glb_ens_12_%mem%"
+            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_ens_12_%mem%"
           }
         ]
       },
@@ -40,10 +42,10 @@
         "ObsType": "default",
         "ObsData": {
           "ObsDataIn": {
-            "filepath": "testdata/glb_obs_12"
+            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_obs_12"
           },
           "ObsDataOut": {
-            "filepath": "testdata/glb_obs_letkf"
+            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_obs_letkf"
           },
           "obsvalue": "ObsValue"
         },
@@ -97,5 +99,8 @@
   },
   "output variance posterior": {
     "filepath": "testdata/glb_letkf_var_posterior"
+  },
+  "test": {
+    "reference filename": "testref/ec/glb_letkf.ref"
   }
 }

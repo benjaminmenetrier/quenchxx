@@ -421,5 +421,8 @@
         "obsvalue": "oman"
       }
     }
+  },
+  "test": {
+    "reference filename": "testref/ec/reg_4densvar.ref"
   }
 }
