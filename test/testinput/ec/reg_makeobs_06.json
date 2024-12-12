@@ -54,7 +54,9 @@
       }
     ]
   },
-  "Model": {},
+  "Model": {
+    "tstep": "PT6H"
+  },
   "Initial Condition": {
     "date": "2010-01-01T06:00:00Z",
     "variables": ["air_temperature"],

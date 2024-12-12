@@ -13,6 +13,9 @@
     ],
     "halo": "1"
   },
+  "model": {
+    "tstep": "PT6H"
+  },
   "Background": {
     "state": [{
       "date": "2010-01-01T18:00:00Z",

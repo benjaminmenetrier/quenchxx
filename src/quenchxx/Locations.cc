@@ -25,18 +25,27 @@ Locations::Locations(const ObsSpace & obsSpace,
 
   // Get vector of observation lon/lat
   std::vector<double> obsLonLatOwn;
-  for (size_t jo = 0; jo < obsSpace.sizeOwn(); ++jo) {
+  for (size_t jo = 0; jo < locs_.size(); ++jo) {
     obsLonLatOwn.push_back(locs_[jo][0]);
     obsLonLatOwn.push_back(locs_[jo][1]);
   }
 
+  // Gather number of observations
+  const int nobsOwn = locs_.size();
+  nobsOwnVec_.resize(obsSpace_.getComm().size());
+  obsSpace_.getComm().allGather(nobsOwn, nobsOwnVec_.begin(), nobsOwnVec_.end());
+  size_t nobsGlb = 0;
+  for (size_t jt = 0; jt < obsSpace_.getComm().size(); ++jt) {
+    nobsGlb += nobsOwnVec_[jt];
+  }
+
   // Allocation
-  std::vector<double> obsLonLatGlb(2*obsSpace.sizeGlb());
+  std::vector<double> obsLonLatGlb(2*nobsGlb);
 
   // Define counts and displacements
   std::vector<int> counts(obsSpace_.getComm().size());
   for (size_t jt = 0; jt < obsSpace_.getComm().size(); ++jt) {
-    counts[jt] = 2*obsSpace.sizeOwn(jt);
+    counts[jt] = 2*nobsOwnVec_[jt];
   }
   std::vector<int> displs;
   displs.push_back(0);

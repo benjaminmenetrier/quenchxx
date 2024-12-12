@@ -60,7 +60,7 @@ Interpolation::Interpolation(const Geometry & geom,
         lats.push_back(lonLatView(jnode, 1));
       }
     }
-std::cout << "ghostVector_: " << ghostVector_ << std::endl;
+
     // Setup unstructured interpolator
     unstructuredInterp_ = std::make_shared<oops::UnstructuredInterpolator>(geom.interpolation(),
       geom.generic(), lats, lons);
@@ -108,6 +108,7 @@ void Interpolation::execute(const atlas::FieldSet & srcFieldSet,
     }
     tgtFieldSet.haloExchange();
   }
+
 
   oops::Log::trace() << classname() << "::execute done" << std::endl;
 }

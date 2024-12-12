@@ -322,7 +322,7 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   fset.name() = config.getString("obserror");
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
     atlas::Field field(vars_[jvar].name(), atlas::array::make_datatype<double>(),
-      atlas::array::make_shape(nobsLoc_, 1));
+      atlas::array::make_shape(nobsOwn_, 1));
     auto view = atlas::array::make_view<double, 2>(field);
     for (size_t jo = 0; jo < nobsOwn_; ++jo) {
       view(jo, 0) = obsErrors[jvar];
@@ -405,33 +405,33 @@ void ObsSpace::screenObservations(const ObsVector & dep,
 // -----------------------------------------------------------------------------
 
 void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
-  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl; 
+  oops::Log::trace() << classname() << "::fillHalo starting" << std::endl;
 
-  // TODO(Benjamin): only if sum(nobsLoc) > nobsGlb
-
-  // Format data
-  std::vector<double> dataSendBuf(vars_.size()*nSend_);
-  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-    const atlas::Field field = fset[vars_[jvar].name()];
-    const auto view = atlas::array::make_view<double, 2>(field);
-    for (size_t jj = 0; jj < nSend_; ++jj) {
-      size_t jo = sendBufIndex_[jj];
-      dataSendBuf[vars_.size()*jj+jvar] = view(jo, 0);
+  if (!distribution_.empty()) {
+    // Format data
+    std::vector<double> dataSendBuf(vars_.size()*nSend_);
+    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+      const atlas::Field field = fset[vars_[jvar].name()];
+      const auto view = atlas::array::make_view<double, 2>(field);
+      for (size_t jj = 0; jj < nSend_; ++jj) {
+        size_t jo = sendBufIndex_[jj];
+        dataSendBuf[vars_.size()*jj+jvar] = view(jo, 0);
+      }
     }
-  }
 
-  // Communicate time and locations
-  std::vector<double> dataRecvBuf(vars_.size()*nRecv_);
-  comm_.allToAllv(dataSendBuf.data(), dataSendCounts_.data(), dataSendDispls_.data(),
-    dataRecvBuf.data(), dataRecvCounts_.data(), dataRecvDispls_.data());
+    // Communicate time and locations
+    std::vector<double> dataRecvBuf(vars_.size()*nRecv_);
+    comm_.allToAllv(dataSendBuf.data(), dataSendCounts_.data(), dataSendDispls_.data(),
+      dataRecvBuf.data(), dataRecvCounts_.data(), dataRecvDispls_.data());
 
-  // Format data
-  for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-    atlas::Field field = fset[vars_[jvar].name()];
-    field.resize(atlas::array::make_shape(nobsLoc_, 1));
-    auto view = atlas::array::make_view<double, 2>(field);
-    for (size_t jj = 0; jj < nRecv_; ++jj) {
-      view(nobsOwn_+jj, 0) = dataRecvBuf[vars_.size()*jj+jvar];
+    // Format data
+    for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+      atlas::Field field = fset[vars_[jvar].name()];
+      field.resize(atlas::array::make_shape(nobsLoc_, 1));
+      auto view = atlas::array::make_view<double, 2>(field);
+      for (size_t jj = 0; jj < nRecv_; ++jj) {
+        view(nobsOwn_+jj, 0) = dataRecvBuf[vars_.size()*jj+jvar];
+      }
     }
   }
 
@@ -697,7 +697,6 @@ void ObsSpace::write(const std::string & filePath,
   ASSERT(locs);
   ASSERT(data);
 
-
   // Global size check
   ASSERT(nobsOwnVec_.size() == comm_.size());
 
@@ -901,7 +900,6 @@ void ObsSpace::write(const std::string & filePath,
     if (retval = nc_put_vara_float(metaData_id, height_id, &init, &nobs, height.data()))
       ERR(retval);
   }
-
   size_t igrp = 0;
   for (auto const & fset : *data) {
     // Format data
@@ -949,6 +947,7 @@ void ObsSpace::setupHalo() const {
   oops::Log::trace() << classname() << "::setupHalo starting" << std::endl;
 
   if (distribution_.empty()) {
+    // No halo required
     nobsLoc_ = nobsOwn_;
   } else {
     // Get center and radius

@@ -13,7 +13,9 @@
     ],
     "halo": "1"
   },
-  "model": {},
+  "model": {
+    "tstep": "PT6H"
+  },
   "variables": ["air_temperature"],
   "ensembles": [
     {

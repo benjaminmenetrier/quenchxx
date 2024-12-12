@@ -33,6 +33,9 @@
     ],
     "halo": 1
   },
+  "model": {
+    "tstep": "PT6H"
+  },
   "background": {
     "members from template": {
       "template": {
