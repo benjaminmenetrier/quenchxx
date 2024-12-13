@@ -45,6 +45,6 @@ Groups:
   - vert_coord: [1.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  volume_mixing_ratio_of_no2: 8.2480111359515175e-07
-  volume_mixing_ratio_of_co: 1.1762686390811461e-05
-  air_pressure_at_surface: 2.7970492841027994e+06
+  volume_mixing_ratio_of_no2: 8.2559160943115061e-07
+  volume_mixing_ratio_of_co: 1.1784557580224038e-05
+  air_pressure_at_surface: 2.7974223300141781e+06

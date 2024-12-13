@@ -16,8 +16,9 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "quenchxx/ObsSpace.h"
+
 namespace quenchxx {
-  class ObsSpace;
 
 // -----------------------------------------------------------------------------
 /// Locations class
@@ -38,6 +39,8 @@ class Locations : public util::Printable,
     {}
 
 /// Local
+  const ObsSpace & obsSpace() const
+    {return obsSpace_;}
   int size() const
     {return locs_.size();}
   int size(const size_t & jt) const

@@ -70,18 +70,20 @@ class Interpolation {
   // Accessors
   const std::string & srcUid() const
     {return srcUid_;}
-  const std::string & dstUid() const
-    {return dstUid_;}
-  const atlas::FunctionSpace & dstFspace() const
-    {return dstFspace_;}
+  const std::string & tgtUid() const
+    {return tgtUid_;}
+  const atlas::FunctionSpace & tgtFspace() const
+    {return tgtFspace_;}
+  const std::vector<bool> & mask() const
+    {return tgtMask_;}
 
  private:
   // Grids UID
   std::string srcUid_;
-  std::string dstUid_;
+  std::string tgtUid_;
 
   // Destination function space
-  atlas::FunctionSpace dstFspace_;
+  atlas::FunctionSpace tgtFspace_;
 
   // ATLAS interpolation wrapper from SABER
   std::shared_ptr<saber::interpolation::AtlasInterpWrapper> atlasInterpWrapper_;
@@ -91,12 +93,15 @@ class Interpolation {
 
   // OOPS unstructured interpolation
   std::shared_ptr<oops::UnstructuredInterpolator> unstructuredInterp_;
-  std::vector<int> ghostVector_;
+  std::vector<int> tgtGhostVector_;
 
   // Vertical interpolations
   std::unordered_map<std::string, std::vector<std::array<size_t, 2>>> verStencil_;
   std::unordered_map<std::string, std::vector<std::array<double, 2>>> verWeights_;
   std::unordered_map<std::string, std::vector<size_t>> verStencilSize_;
+
+  // Target mask
+  std::vector<bool> tgtMask_;
 };
 
 }  // namespace quenchxx

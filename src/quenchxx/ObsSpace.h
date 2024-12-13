@@ -88,6 +88,7 @@ class ObsSpace : public util::Printable,
   void fillHalo(atlas::FieldSet &) const;
   int64_t getSeed() const
     {return seed_;}
+  void setMask(const std::vector<bool> & mask) const;
 
  private:
   void print(std::ostream &) const;
@@ -117,6 +118,7 @@ class ObsSpace : public util::Printable,
   const varns::Variables vars_;
   std::vector<size_t> nobsOwnVec_;
   std::vector<int> order_;
+  mutable std::vector<bool> mask_;
   eckit::LocalConfiguration distribution_;
   mutable size_t nobsLoc_;
   mutable std::vector<int> sendBufIndex_;

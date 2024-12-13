@@ -37,6 +37,6 @@ Groups:
   Mask size: 100%
 Model data: LocalConfiguration[root={top pressure => 1.0000000000000000e-02}]
 Fields:
-  volume_mixing_ratio_of_no2: 6.1744843561604722e-07
-  volume_mixing_ratio_of_co: 9.3863571025709613e-06
-  air_pressure_thickness: 3.7634768982216861e+05
+  volume_mixing_ratio_of_no2: 4.9010866217454362e+39
+  volume_mixing_ratio_of_co: 4.9010866217454362e+39
+  air_pressure_thickness: 4.9010866217454362e+39

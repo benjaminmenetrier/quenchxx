@@ -895,7 +895,7 @@ void Fields::interpolate(const Locations & locs,
     // Create observation fieldset
     atlas::FieldSet obsFieldSet;
     for (const auto & var : vars_.variables()) {
-      atlas::Field obsField = interpolation->dstFspace().createField<double>(
+      atlas::Field obsField = interpolation->tgtFspace().createField<double>(
         atlas::option::name(var) | atlas::option::levels(geom_->levels(var)));
       obsFieldSet.add(obsField);
     }
@@ -926,7 +926,7 @@ void Fields::interpolateAD(const Locations & locs,
     // Create observation fieldset
     atlas::FieldSet obsFieldSet;
     for (const auto & var : vars_.variables()) {
-      atlas::Field obsField = interpolation->dstFspace().createField<double>(
+      atlas::Field obsField = interpolation->tgtFspace().createField<double>(
         atlas::option::name(var) | atlas::option::levels(geom_->levels(var)));
       obsFieldSet.add(obsField);
     }
@@ -1545,7 +1545,7 @@ std::vector<Interpolation>::iterator Fields::setupGridInterpolation(const Geomet
 
   // Compare with existing UIDs
   for (auto it = interpolations().begin(); it != interpolations().end(); ++it) {
-    if ((it->srcUid() == srcGeomUid) && (it->dstUid() == geomUid)) {
+    if ((it->srcUid() == srcGeomUid) && (it->tgtUid() == geomUid)) {
       oops::Log::trace() << classname() << "::setupGridInterpolation done" << std::endl;
       return it;
     }
@@ -1573,11 +1573,11 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
 
   // Get geometry UIDs (grid + "_" + paritioner)
   const std::string srcGeomUid = geom_->grid().uid() + "_" + geom_->partitioner().type();
-  const std::string dstObsUid = locs.grid().uid() + "_" + geom_->partitioner().type();
+  const std::string tgtObsUid = locs.grid().uid() + "_" + geom_->partitioner().type();
 
   // Compare with existing UIDs
   for (auto it = interpolations().begin(); it != interpolations().end(); ++it) {
-    if ((it->srcUid() == srcGeomUid) && (it->dstUid() == dstObsUid)) {
+    if ((it->srcUid() == srcGeomUid) && (it->tgtUid() == tgtObsUid)) {
       oops::Log::trace() << classname() << "::setupObsInterpolation done" << std::endl;
       return it;
     }
@@ -1618,7 +1618,10 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
                               srcGeomUid,
                               locs.grid(),
                               *fspace,
-                              dstObsUid);
+                              tgtObsUid);
+
+  // Set observation mask
+  locs.obsSpace().setMask(interpolation.mask());
 
   // Interpolate vertical coordinate
   atlas::FieldSet fset;

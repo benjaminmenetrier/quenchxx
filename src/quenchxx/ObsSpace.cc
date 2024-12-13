@@ -440,6 +440,23 @@ void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
 
 // -----------------------------------------------------------------------------
 
+void ObsSpace::setMask(const std::vector<bool> & mask) const {
+  oops::Log::trace() << classname() << "::setMask starting" << std::endl;
+
+  std::cout << "mask.size(): " << mask.size() << std::endl;
+  std::cout << "nobsOwn_: " << nobsOwn_ << std::endl;
+  ASSERT(mask.size() == nobsOwn_);
+  mask_.resize(nobsOwn_);
+  mask_ = mask;
+  std::cout << "MASK set" << std::endl;
+  std::abort();
+  // TODO(Benjamin) here
+
+  oops::Log::trace() << classname() << "::setMask done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsSpace::print(std::ostream & os) const {
   oops::Log::trace() << classname() << "::print starting" << std::endl;
 
