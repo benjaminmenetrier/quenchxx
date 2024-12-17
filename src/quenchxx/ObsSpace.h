@@ -71,14 +71,16 @@ class ObsSpace : public util::Printable,
   void saveObservations() const
     {}
 
+  const size_t & sizeGlbAll() const
+    {return nobsGlbAll_;}
+  const size_t & sizeGlb() const
+    {return nobsGlb_;}
   const size_t & sizeOwn() const
     {return nobsOwn_;}
   const size_t & sizeOwn(const size_t & it) const
     {return nobsOwnVec_[it];}
   const size_t & sizeLoc() const
     {return nobsLoc_;}
-  const size_t & sizeGlb() const
-    {return nobsGlb_;}
   const std::vector<int> & order() const
     {return order_;}
   const varns::Variables & vars() const
@@ -86,9 +88,10 @@ class ObsSpace : public util::Printable,
   std::vector<atlas::Point3> & locations() const
     {return locs_;}
   void fillHalo(atlas::FieldSet &) const;
-  int64_t getSeed() const
+  const int64_t & getSeed() const
     {return seed_;}
-  void setMask(const std::vector<bool> & mask) const;
+  const std::vector<int> & maskSum() const
+    {return maskSum_;}
 
  private:
   void print(std::ostream &) const;
@@ -96,9 +99,10 @@ class ObsSpace : public util::Printable,
   void write(const std::string &,
              const bool &) const;
   void setupHalo() const;
+  void checkValidity(const std::vector<float> &,
+                     const std::vector<float> &);
   void splitObservations(const std::vector<float> &,
-                         const std::vector<float> &,
-                         std::vector<int> &);
+                         const std::vector<float> &);
 
   const util::DateTime winbgn_;
   const util::DateTime winend_;
@@ -113,12 +117,15 @@ class ObsSpace : public util::Printable,
   mutable std::vector<atlas::FieldSet> screenedData_;
   std::string nameIn_;
   std::string nameOut_;
-  size_t nobsOwn_;
+  size_t nobsGlbAll_;
   size_t nobsGlb_;
+  size_t nobsOwn_;
   const varns::Variables vars_;
   std::vector<size_t> nobsOwnVec_;
   std::vector<int> order_;
-  mutable std::vector<bool> mask_;
+  std::vector<int> mask_;
+  std::vector<int> maskSum_;
+  std::vector<int> partition_;
   eckit::LocalConfiguration distribution_;
   mutable size_t nobsLoc_;
   mutable std::vector<int> sendBufIndex_;

@@ -42,6 +42,6 @@
     }
   }],
   "test": {
-    "reference filename": "testref/synthetic_data_stddev.ref"
+    "reference filename": "testref/ec/synthetic_data_stddev.ref"
   }
 }

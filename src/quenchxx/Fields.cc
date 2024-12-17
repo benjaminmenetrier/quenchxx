@@ -1620,9 +1620,6 @@ std::vector<Interpolation>::iterator Fields::setupObsInterpolation(const Locatio
                               *fspace,
                               tgtObsUid);
 
-  // Set observation mask
-  locs.obsSpace().setMask(interpolation.mask());
-
   // Interpolate vertical coordinate
   atlas::FieldSet fset;
   atlas::FieldSet fsetInterp;

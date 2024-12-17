@@ -27,7 +27,7 @@
           {
             "date": "2010-01-01T12:00:00Z",
             "variables": ["air_temperature"],
-            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_ens_12_%mem%"
+            "filepath": "testdata/glb_ens_12_%mem%"
           }
         ]
       },
@@ -42,10 +42,10 @@
         "ObsType": "default",
         "ObsData": {
           "ObsDataIn": {
-            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_obs_12"
+            "filepath": "testdata/glb_obs_12"
           },
           "ObsDataOut": {
-            "filepath": "/home/benjaminm/build/jedi-bundle/quenchxx/test/testdata/glb_obs_letkf"
+            "filepath": "testdata/glb_obs_letkf"
           },
           "obsvalue": "ObsValue"
         },

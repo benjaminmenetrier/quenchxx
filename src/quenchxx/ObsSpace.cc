@@ -186,11 +186,11 @@ std::vector<atlas::Point3> ObsSpace::locations(const util::DateTime & t1,
                                                const util::DateTime & t2) const {
   oops::Log::trace() << classname() << "::locations starting" << std::endl;
 
-  std::vector<size_t> olist = timeSelect(t1, t2);
-  const size_t nobs = olist.size();
+  std::vector<size_t> obsList = timeSelect(t1, t2);
+  const size_t nobs = obsList.size();
   std::vector<atlas::Point3> locs(nobs);
   for (size_t jo = 0; jo < nobs; ++jo) {
-    locs[jo] = locs_[olist[jo]];
+    locs[jo] = locs_[obsList[jo]];
   }
 
   oops::Log::trace() << classname() << "::locations done" << std::endl;
@@ -227,17 +227,28 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
 
   // Parameters
   const std::vector<float> latitude = config.getFloatVector("lats");
-  nobsGlb_ = latitude.size();
+  nobsGlbAll_ = latitude.size();
   const std::vector<float> longitude = config.getFloatVector("lons");
-  ASSERT(longitude.size() == nobsGlb_);
+  ASSERT(longitude.size() == nobsGlbAll_);
   const std::vector<int> dateTime = config.getIntVector("dateTimes");
-  ASSERT(dateTime.size() == nobsGlb_);
+  ASSERT(dateTime.size() == nobsGlbAll_);
   const std::string vertCoordType = config.getString("vert coord type");
   const std::vector<float> vertCoords = config.getFloatVector("vert coords");
-  ASSERT(vertCoords.size() == nobsGlb_);
+  ASSERT(vertCoords.size() == nobsGlbAll_);
   const std::string epoch = config.getString("epoch");
   const std::vector<double> obsErrors = config.getDoubleVector("obs errors");
   ASSERT(obsErrors.size() == vars_.size());
+
+  // Check observations validity
+  checkValidity(longitude, latitude);
+
+  // Count invalid points
+  const size_t nobsOut = std::count(maskSum_.cbegin(), maskSum_.cend(), 0);
+
+  // Global number of observations
+  nobsGlb_ = nobsGlbAll_-nobsOut;
+  oops::Log::info() << "Info     : " << nobsGlb_ << " valid observations out of " << nobsGlbAll_
+    << std::endl;
 
   // Global vectors
   std::vector<int> timesGlb;
@@ -247,40 +258,38 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
   nobsOwnVec_.resize(comm_.size());
 
   if (comm_.rank() == 0) {
-    // Resize vectors
-    std::vector<double> locsGlbTmp(3*nobsGlb_);
-    std::vector<size_t> orderGlbTmp(nobsGlb_);
+    // Split observations between tasks
+    splitObservations(longitude, latitude);
 
     // Get start dateTime
     const util::DateTime start(epoch.substr(14, 20));
-
-    // Split observations between tasks
-    std::vector<int> partition(nobsGlb_);
-    splitObservations(longitude, latitude, partition);
 
     // Reorder vectors
     timesGlb.resize(6*nobsGlb_);
     locsGlb.resize(3*nobsGlb_);
     order_.resize(nobsGlb_);
     std::vector<int> iobsOwnVec(comm_.size(), 0);
-    for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-      size_t offset = 0;
-      for (int jt = 0; jt < partition[jo]; ++jt) {
-        offset += nobsOwnVec_[jt];
+    for (size_t jo = 0; jo < nobsGlbAll_; ++jo) {
+      if (partition_[jo] >= 0) {
+        size_t offset = 0;
+        for (int jt = 0; jt < partition_[jo]; ++jt) {
+          offset += nobsOwnVec_[jt];
+        }
+        offset += iobsOwnVec[partition_[jo]];
+        util::DateTime startTest = start + util::Duration(dateTime[jo]);
+        startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
+          timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
+        locsGlb[3*offset+0] = longitude[jo];
+        locsGlb[3*offset+1] = latitude[jo];
+        locsGlb[3*offset+2] = vertCoords[jo];
+        order_[offset] = jo;
+        ++iobsOwnVec[partition_[jo]];
       }
-      offset += iobsOwnVec[partition[jo]];
-      util::DateTime startTest = start + util::Duration(dateTime[jo]);
-      startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
-        timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
-      locsGlb[3*offset+0] = longitude[jo];
-      locsGlb[3*offset+1] = latitude[jo];
-      locsGlb[3*offset+2] = vertCoords[jo];
-      order_[offset] = jo;
-      ++iobsOwnVec[partition[jo]];
     }
   }
 
   // Broadcast number of observations
+  comm_.broadcast(nobsGlb_, 0);
   comm_.broadcast(nobsOwnVec_, 0);
   nobsOwn_ = nobsOwnVec_[comm_.rank()];
 
@@ -440,23 +449,6 @@ void ObsSpace::fillHalo(atlas::FieldSet & fset) const {
 
 // -----------------------------------------------------------------------------
 
-void ObsSpace::setMask(const std::vector<bool> & mask) const {
-  oops::Log::trace() << classname() << "::setMask starting" << std::endl;
-
-  std::cout << "mask.size(): " << mask.size() << std::endl;
-  std::cout << "nobsOwn_: " << nobsOwn_ << std::endl;
-  ASSERT(mask.size() == nobsOwn_);
-  mask_.resize(nobsOwn_);
-  mask_ = mask;
-  std::cout << "MASK set" << std::endl;
-  std::abort();
-  // TODO(Benjamin) here
-
-  oops::Log::trace() << classname() << "::setMask done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsSpace::print(std::ostream & os) const {
   oops::Log::trace() << classname() << "::print starting" << std::endl;
 
@@ -473,7 +465,6 @@ void ObsSpace::read(const std::string & filePath) {
 
   // Global size and vectors
   int ngrp;
-  std::vector<int> partition;
   std::vector<int> timesGlb;
   std::vector<double> locsGlb;
   std::vector<double> dataGlb;
@@ -542,9 +533,15 @@ void ObsSpace::read(const std::string & filePath) {
     if (retval = nc_inq_varid(meta_group_id, "height", &height_id)) ERR(retval);
     if (retval = nc_get_var_float(meta_group_id, height_id, height.data())) ERR(retval);
 
+    // Set mask
+    nobsGlbAll_ = nobsGlb_;
+    mask_.resize(nobsGlb_);
+    maskSum_.resize(nobsGlb_);
+    std::fill(mask_.begin(), mask_.end(), 1);
+    std::fill(maskSum_.begin(), maskSum_.end(), 1);
+    
     // Split observations between tasks
-    partition.resize(nobsGlb_);
-    splitObservations(longitude, latitude, partition);
+    splitObservations(longitude, latitude);
 
     // Get ordered time and location
     timesGlb.resize(6*nobsGlb_);
@@ -552,27 +549,24 @@ void ObsSpace::read(const std::string & filePath) {
     std::vector<int> iobsOwnVec(comm_.size(), 0);
     for (size_t jo = 0; jo < nobsGlb_; ++jo) {
       size_t offset = 0;
-      for (int jt = 0; jt < partition[jo]; ++jt) {
+      for (int jt = 0; jt < partition_[jo]; ++jt) {
         offset += nobsOwnVec_[jt];
       }
-      offset += iobsOwnVec[partition[jo]];
+      offset += iobsOwnVec[partition_[jo]];
       util::DateTime startTest = start + util::Duration(dateTime[jo]);
       startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
         timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
       locsGlb[3*offset+0] = static_cast<double>(longitude[jo]);
       locsGlb[3*offset+1] = static_cast<double>(latitude[jo]);
       locsGlb[3*offset+2] = static_cast<double>(height[jo]);
-      ++iobsOwnVec[partition[jo]];
+      ++iobsOwnVec[partition_[jo]];
     }
   }
 
   // Broadcast number of observations for each task
+  comm_.broadcast(nobsGlb_, 0);
   comm_.broadcast(nobsOwnVec_, 0);
   nobsOwn_ = nobsOwnVec_[comm_.rank()];
-  nobsGlb_ = 0;
-  for (size_t jt = 0; jt < comm_.size(); ++jt) {
-    nobsGlb_ += nobsOwnVec_[jt];
-  }
 
   // Allocation of local vectors
   std::vector<int> timesOwn(6*nobsOwn_);
@@ -641,12 +635,12 @@ void ObsSpace::read(const std::string & filePath) {
           std::vector<int> iobsOwnVec(comm_.size(), 0);
           for (size_t jo = 0; jo < nobsGlb_; ++jo) {
             size_t offset = 0;
-            for (int jt = 0; jt < partition[jo]; ++jt) {
+            for (int jt = 0; jt < partition_[jo]; ++jt) {
               offset += nobsOwnVec_[jt];
             }
-            offset += iobsOwnVec[partition[jo]];
+            offset += iobsOwnVec[partition_[jo]];
             dataGlb[vars_.size()*offset+jvar] = static_cast<double>(dataVar[jo]);
-            ++iobsOwnVec[partition[jo]];
+            ++iobsOwnVec[partition_[jo]];
           }
         }
       }
@@ -1092,21 +1086,61 @@ void ObsSpace::setupHalo() const {
 // -----------------------------------------------------------------------------
 
 void ObsSpace::splitObservations(const std::vector<float> & longitude,
-                                 const std::vector<float> & latitude,
-                                 std::vector<int> & partition) {
+                                 const std::vector<float> & latitude) {
   oops::Log::trace() << classname() << "::splitObservations starting" << std::endl;
 
-  // TODO(Benjamin): other distributions
-  if (true) {
-    for (size_t jo = 0; jo < nobsGlb_; ++jo) {
-      // Define partition
-      partition[jo] = geom_->generic().closestTask(static_cast<double>(latitude[jo]),
-                                                   static_cast<double>(longitude[jo]));
-      ++nobsOwnVec_[partition[jo]];
+  // Initialize partition
+  partition_.resize(nobsGlb_);
+  std::fill(partition_.begin(), partition_.end(), -1);
+
+  size_t jo = 0;
+  for (size_t joAll = 0; joAll < nobsGlbAll_; ++joAll) {
+    if (maskSum_[joAll] > 0) {
+      // TODO(Benjamin): other distributions
+      if (true) {
+        // Define partition
+        partition_[jo] = geom_->generic().closestTask(static_cast<double>(latitude[joAll]),
+                                                   static_cast<double>(longitude[joAll]));
+        ++nobsOwnVec_[partition_[jo]];
+      }
+      ++jo;
     }
   }
 
+  // Check partition is defined
+  for (size_t jo = 0; jo < nobsGlb_; ++jo) {
+    ASSERT(partition_[jo] >= 0);
+  }
+
   oops::Log::trace() << classname() << "::splitObservations done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::checkValidity(const std::vector<float> & longitude,
+                             const std::vector<float> & latitude) {
+  oops::Log::trace() << classname() << "::checkValidity starting" << std::endl;
+
+  // Initialize vectors
+  mask_.resize(nobsGlbAll_);
+  maskSum_.resize(nobsGlbAll_);
+
+  for (size_t joAll = 0; joAll < nobsGlbAll_; ++joAll) {
+    // Detect invalid observations
+    std::array<int, 3> indices{};
+    std::array<double, 3> baryCoords{};
+    if (geom_->generic().containingTriangleAndBarycentricCoords(
+      latitude[joAll], longitude[joAll], indices, baryCoords)) {
+      mask_[joAll] = 1;
+    } else {
+      mask_[joAll] = 0;
+    }
+  }
+
+  // Sum mask
+  comm_.allReduce(mask_, maskSum_, eckit::mpi::sum());
+
+  oops::Log::trace() << classname() << "::checkValidity done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

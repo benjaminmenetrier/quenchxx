@@ -182,20 +182,24 @@ void ObsVector::random() {
 
   // Global vector
   std::vector<double> randomPertGlb;
-  const size_t globalnobs = vars_.size()*obsSpace_.sizeGlb();
 
   if (comm_.rank() == 0) {
     // Random numbers generator
-    util::NormalDistribution<double> x(globalnobs, 0.0, 1.0, obsSpace_.getSeed());
-    std::vector<double> randomPertTmp(globalnobs);
+    util::NormalDistribution<double> x(vars_.size()*obsSpace_.sizeGlbAll(), 0.0, 1.0,
+      obsSpace_.getSeed());
+    std::vector<double> randomPertTmp(vars_.size()*obsSpace_.sizeGlbAll());
     randomPertTmp = x.data();
 
     // Reorder perturbations
-    randomPertGlb.resize(globalnobs);
-    for (size_t jo = 0; jo < obsSpace_.sizeGlb(); ++jo) {
-      for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
-        randomPertGlb[jo*vars_.size()+jvar] =
-          randomPertTmp[obsSpace_.order()[jo]*vars_.size()+jvar];
+    randomPertGlb.resize(vars_.size()*obsSpace_.sizeGlb());
+    size_t jo = 0;
+    for (size_t joAll = 0; joAll < obsSpace_.sizeGlbAll(); ++joAll) {
+      if (obsSpace_.maskSum()[joAll] > 0) {
+        for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+          randomPertGlb[jo*vars_.size()+jvar] =
+            randomPertTmp[obsSpace_.order()[jo]*vars_.size()+jvar];
+        }
+        ++jo;
       }
     }
   }
@@ -402,7 +406,7 @@ void ObsVector::print(std::ostream & os) const {
 
   for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
     if (obsSpace_.sizeGlb() > 0) {
-      os << vars_[jvar].name() << " nobs= " << obsSpace_.sizeGlb() << " Min="
+      os << vars_[jvar].name() << " nobs= " << obsSpace_. sizeGlb() << " Min="
          << zmin[jvar] << ", Max=" << zmax[jvar] << ", RMS=" << zrms[jvar] << std::endl;
     } else {
       os << vars_[jvar].name() << ": No observations." << std::endl;

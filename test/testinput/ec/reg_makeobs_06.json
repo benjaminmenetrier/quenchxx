@@ -67,6 +67,7 @@
     "End": "2010-01-01T06:00:00Z"
   },
   "test": {
-    "reference filename": "testref/reg_makeobs_06.ref"
+    "reference filename": "testref/reg_makeobs_06.ref",
+    "float relative tolerance": 1.0e-8
   }
 }

@@ -1,6 +1,6 @@
 {
   "time window": {
-    "begin": "2010-01-01T11:59:59.000Z",
+    "begin": "2010-01-01T11:59:59Z",
     "length": "PT2S"
   },
   "geometry": {
@@ -25,13 +25,11 @@
     "partitioner": "checkerboard",
     "groups": [
       {
-        "variables": [
-          "air_temperature"
-        ],
-        "levels": 2
+        "variables": ["air_temperature"],
+        "levels": "2"
       }
     ],
-    "halo": 1
+    "halo": "1"
   },
   "model": {
     "tstep": "PT6H"
@@ -39,50 +37,45 @@
   "background": {
     "members from template": {
       "template": {
-        "date": "2010-01-01T12:00:00.000Z",
-        "state variables": [
-          "air_temperature"
-        ],
-        "filepath": "Data/synthetic/reg_ens_12_mem"
+        "state": [
+          {
+            "date": "2010-01-01T12:00:00Z",
+            "variables": ["air_temperature"],
+            "filepath": "testdata/reg_ens_12_%mem%"
+          }
+        ]
       },
-      "pattern": "mem",
-      "zero padding": 6,
-      "nmembers": 10
+      "pattern": "%mem%",
+      "zero padding": "6",
+      "nmembers": "10"
     }
   },
   "observations": {
-    "observers": [
+    "ObsTypes": [
       {
-        "obs space": {
-          "name": "air_temperature",
-          "simulated variables": [
-            "air_temperature"
-          ],
-          "obsdatain": {
-            "engine": {
-              "type": "H5File",
-              "obsfile": "Data/synthetic/reg_obs_12.nc"
-            }
+        "ObsType": "default",
+        "ObsData": {
+          "ObsDataIn": {
+            "filepath": "testdata/reg_obs_12"
           },
-          "obsdataout": {
-            "engine": {
-              "type": "H5File",
-              "obsfile": "Data/synthetic/reg_obs_letkf.nc"
-            }
+          "ObsDataOut": {
+            "filepath": "testdata/reg_obs_letkf"
+          },
+          "obsvalue": "ObsValue"
+        },
+        "Covariance": {
+          "ObsErrorCovariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsError"
           }
-        },
-        "obs operator": {
-          "name": "Identity"
-        },
-        "obs error": {
-          "covariance model": "diagonal"
         },
         "obs localizations": [
           {
             "localization method": "default",
             "horizontal length-scale": 1000000
           }
-        ]
+        ],
+        "variables": ["air_temperature"]
       }
     ]
   },
@@ -104,22 +97,22 @@
     }
   },
   "output": {
-    "filepath": "Data/synthetic/reg_letkf_state"
+    "filepath": "testdata/reg_letkf_state"
   },
   "output increment": {
-    "filepath": "Data/synthetic/reg_letkf_increment"
+    "filepath": "testdata/reg_letkf_increment"
   },
   "output ensemble increments": {
-    "filepath": "Data/synthetic/reg_letkf_increment"
+    "filepath": "testdata/reg_letkf_increment"
   },
   "output mean prior": {
-    "filepath": "Data/synthetic/reg_letkf_mean_prior"
+    "filepath": "testdata/reg_letkf_mean_prior"
   },
   "output variance prior": {
-    "filepath": "Data/synthetic/reg_letkf_var_prior"
+    "filepath": "testdata/reg_letkf_var_prior"
   },
   "output variance posterior": {
-    "filepath": "Data/synthetic/reg_letkf_var_posterior"
+    "filepath": "testdata/reg_letkf_var_posterior"
   },
   "test": {
     "reference filename": "testref/ec/reg_letkf.ref"

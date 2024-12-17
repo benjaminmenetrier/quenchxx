@@ -1,4 +1,4 @@
-Write variance of background: 51.2085
+Write variance of background: 5.1208493278336505e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -12,11 +12,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 51.2085
-Write variance of evil_assim_ensemble: 7.73559
+  air_temperature: 5.1208493278336505e+01
+Write variance of evil_assim_ensemble: 7.7528434318240311e+00
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -30,11 +30,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 7.73559
-Write variance of evil_control_ens_D: 28.0783
+  air_temperature: 7.7528434318240311e+00
+Write variance of evil_control_ens_D: 2.8190475343059415e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -48,11 +48,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0783
-Write variance of evil_control_ens_R: 48.3243
+  air_temperature: 2.8190475343059415e+01
+Write variance of evil_control_ens_R: 4.8296756013247133e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -66,11 +66,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 48.3243
-Write variance of evil_control_ens_S: 28.0706
+  air_temperature: 4.8296756013247133e+01
+Write variance of evil_control_ens_S: 3.1767100575848342e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -84,11 +84,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0706
-Write variance of evil_dual_ens_D: 28.0759
+  air_temperature: 3.1767100575848342e+01
+Write variance of evil_dual_ens_D: 2.8075861836732940e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -102,11 +102,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0759
-Write variance of evil_dual_ens_R: 48.4969
+  air_temperature: 2.8075861836732940e+01
+Write variance of evil_dual_ens_R: 4.8496900770027331e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -120,11 +120,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 48.4969
-Write variance of evil_dual_ens_S: 28.0706
+  air_temperature: 4.8496900770027331e+01
+Write variance of evil_dual_ens_S: 2.8070625172406036e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -138,11 +138,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0706
-Write variance of evil_primal_ens_D: 28.0759
+  air_temperature: 2.8070625172406036e+01
+Write variance of evil_primal_ens_D: 2.8188215801825933e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -156,11 +156,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0759
-Write variance of evil_primal_ens_R: 48.4969
+  air_temperature: 2.8188215801825933e+01
+Write variance of evil_primal_ens_R: 4.8472232451509257e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -174,11 +174,11 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 48.4969
-Write variance of evil_primal_ens_S: 28.0706
+  air_temperature: 4.8472232451509257e+01
+Write variance of evil_primal_ens_S: 3.1767100575848563e+01
 Valid time: 2010-01-01T12:00:00Z
 Quench geometry grid:
 - name: L40x21
@@ -192,7 +192,7 @@ Groups:
 - Group 0:
   Vertical levels: 
   - number: 3
-  - vert_coord: [1,2,3]
+  - vert_coord: [1.0000000000000000e+00,2.0000000000000000e+00,3.0000000000000000e+00]
   Mask size: 100%
 Fields:
-  air_temperature: 28.0706
+  air_temperature: 3.1767100575848563e+01

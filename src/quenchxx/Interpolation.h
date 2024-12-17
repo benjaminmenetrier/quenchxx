@@ -74,8 +74,6 @@ class Interpolation {
     {return tgtUid_;}
   const atlas::FunctionSpace & tgtFspace() const
     {return tgtFspace_;}
-  const std::vector<bool> & mask() const
-    {return tgtMask_;}
 
  private:
   // Grids UID
@@ -99,9 +97,6 @@ class Interpolation {
   std::unordered_map<std::string, std::vector<std::array<size_t, 2>>> verStencil_;
   std::unordered_map<std::string, std::vector<std::array<double, 2>>> verWeights_;
   std::unordered_map<std::string, std::vector<size_t>> verStencilSize_;
-
-  // Target mask
-  std::vector<bool> tgtMask_;
 };
 
 }  // namespace quenchxx

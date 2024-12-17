@@ -191,6 +191,7 @@
           "version": "default",
           "tstep": "PT0H",
           "trajectory": {
+            "tstep": "PT6H",
             "forcing": {
               "variables": ["air_temperature"]
             }

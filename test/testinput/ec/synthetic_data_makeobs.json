@@ -57,6 +57,6 @@
     "End": "2010-01-01T12:00:00Z"
   },
   "test": {
-    "reference filename": "testref/synthetic_data_makeobs.ref"
+    "reference filename": "testref/ec/synthetic_data_makeobs.ref"
   }
 }

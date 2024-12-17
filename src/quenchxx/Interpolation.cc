@@ -68,31 +68,6 @@ Interpolation::Interpolation(const Geometry & geom,
     throw eckit::Exception("wrong interpolation type", Here());
   }
 
-  // Create dummy source FieldSet
-  atlas::FieldSet srcFset;
-  atlas::Field srcField = geom.functionSpace().createField<double>(
-    atlas::option::name("dummy") | atlas::option::levels(1));
-  auto srcView = atlas::array::make_view<double, 2>(srcField);
-  srcView.assign(0.0);
-  srcField.metadata().set("interp_type", "default");
-  srcFset.add(srcField);
-
-  // Create dummy destination FieldSet
-  atlas::FieldSet tgtFset;
-  atlas::Field tgtField = tgtFspace.createField<double>(
-    atlas::option::name("dummy") | atlas::option::levels(1));
-  tgtFset.add(tgtField);
-
-  // Apply interpolation to get masked values
-  execute(srcFset, tgtFset);
-  const auto tgtView = atlas::array::make_view<double, 2>(tgtField);
-  const auto tgtGhostView = atlas::array::make_view<int, 1>(tgtFspace.ghost());
-  for (atlas::idx_t jnode = 0; jnode < tgtField.shape(0); ++jnode) {
-    if (tgtGhostView(jnode) == 0) {
-      tgtMask_.push_back(tgtView(jnode, 0) == 0.0);
-    }
-  }
-
   oops::Log::trace() << classname() << "::Interpolation done" << std::endl;
 }
 

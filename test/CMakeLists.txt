@@ -274,6 +274,7 @@ testref/ec/glb_letkf.ref
 testref/ec/glb_3dvar.ref
 
 # REGIONAL
+testref/ec/reg_3dvar.ref
 testref/ec/reg_3densvar.ref
 testref/ec/reg_4densvar.ref
 testref/ec/reg_hofx.ref
