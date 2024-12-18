@@ -269,8 +269,9 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
     locsGlb.resize(3*nobsGlb_);
     order_.resize(nobsGlb_);
     std::vector<int> iobsOwnVec(comm_.size(), 0);
-    for (size_t jo = 0; jo < nobsGlbAll_; ++jo) {
-      if (partition_[jo] >= 0) {
+    size_t jo = 0;
+    for (size_t joAll = 0; joAll < nobsGlbAll_; ++joAll) {
+      if (maskSum_[joAll] > 0) {
         size_t offset = 0;
         for (int jt = 0; jt < partition_[jo]; ++jt) {
           offset += nobsOwnVec_[jt];
@@ -279,11 +280,12 @@ void ObsSpace::generateDistribution(const eckit::Configuration & config) {
         util::DateTime startTest = start + util::Duration(dateTime[jo]);
         startTest.toYYYYMMDDhhmmss(timesGlb[6*offset+0], timesGlb[6*offset+1], timesGlb[6*offset+2],
           timesGlb[6*offset+3], timesGlb[6*offset+4], timesGlb[6*offset+5]);
-        locsGlb[3*offset+0] = longitude[jo];
-        locsGlb[3*offset+1] = latitude[jo];
-        locsGlb[3*offset+2] = vertCoords[jo];
-        order_[offset] = jo;
+        locsGlb[3*offset+0] = longitude[joAll];
+        locsGlb[3*offset+1] = latitude[joAll];
+        locsGlb[3*offset+2] = vertCoords[joAll];
+        order_[offset] = joAll;
         ++iobsOwnVec[partition_[jo]];
+        ++jo;
       }
     }
   }
@@ -539,7 +541,7 @@ void ObsSpace::read(const std::string & filePath) {
     maskSum_.resize(nobsGlb_);
     std::fill(mask_.begin(), mask_.end(), 1);
     std::fill(maskSum_.begin(), maskSum_.end(), 1);
-    
+
     // Split observations between tasks
     splitObservations(longitude, latitude);
 

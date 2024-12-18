@@ -153,6 +153,7 @@
     }
   },
   "test": {
-    "reference filename": "testref/ec/evil_control_3dvar.ref"
+    "reference filename": "testref/ec/evil_control_3dvar.ref",
+    "float relative tolerance": 1.0e-10
   }
 }

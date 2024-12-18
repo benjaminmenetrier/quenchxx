@@ -151,6 +151,7 @@
     }
   },
   "test": {
-    "reference filename": "testref/ec/evil_assim_ensemble.ref"
+    "reference filename": "testref/ec/evil_assim_ensemble.ref",
+    "float relative tolerance": 2.0e-10
   }
 }
