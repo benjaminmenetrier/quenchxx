@@ -175,15 +175,13 @@ if "test" in conf:
   ftest = ref_name + ".test.out"
 
   # Run job, create log and test outputs
-  with open(flog, "w") as logfile:
-    command = "mpiexec -n " + str(args.mpi) + " " + args.exec + " " + args.input
-    run = subprocess.run(command, shell=True, stdout=logfile, stderr=logfile)
-  # TODO(Benjamin): display output simultaneously
-  command = "cat " + flog
-  subprocess.run(command, shell=True)
-  if run.returncode != 0:
-    print("Execution failed with return code " + str(run.returncode))
-    exit(run.returncode)
+  command = "mpiexec -n " + str(args.mpi) + " " + args.exec + " " + args.input
+  with open(flog, 'w') as log:
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+    while proc.poll() is None:
+      text = proc.stdout.readline()
+      log.write(text)
+      sys.stdout.write(text)
 
   # Extract test lines
   command = "grep -s 'Test     : ' " + flog + " > " + ftest
@@ -196,7 +194,7 @@ if "test" in conf:
   # Open flog
   file_run = open(flog, "r")
 
-  # Open 
+  # Open
   file_ref = open(ref_name, "r")
 
   # Write grep results to a new file
