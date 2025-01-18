@@ -12,19 +12,17 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
-
-#include "oops/base/VariableChangeParametersBase.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
 
 namespace quenchxx {
 
 // -------------------------------------------------------------------------------------------------
 /// VariableChange parameters class
 
-class VariableChangeParameters : public oops::VariableChangeParametersBase {
-  OOPS_CONCRETE_PARAMETERS(VariableChangeParameters, VariableChangeParametersBase)
+class VariableChangeParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(VariableChangeParameters, Parameters)
  public:
-  // VADER parameters
   oops::Parameter<std::map<std::string, std::vector<std::string>>> vaderCustomCookbook{
     "vader custom cookbook", vaderQuenchxxCustomCookbook(), this};
   oops::OptionalParameter<vader::VaderParameters> vaderParam{"vader", this};

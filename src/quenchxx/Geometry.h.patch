@@ -1,14 +1,14 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h.tmp.bak	2024-12-03 11:28:36.412432984 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/Geometry.h	2024-12-03 10:58:31.716032582 +0100
-@@ -19,7 +19,6 @@
- 
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.h.tmp.bak	2025-01-18 06:56:55.382721345 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.h	2024-12-07 08:12:29.858178952 +0100
+@@ -21,7 +21,6 @@
  #include "eckit/mpi/Comm.h"
  
+ #include "oops/base/GeometryData.h"
 -#include "oops/base/Variables.h"
  #include "oops/mpi/mpi.h"
  #include "oops/util/ObjectCounter.h"
  #include "oops/util/parameters/OptionalParameter.h"
-@@ -28,11 +27,14 @@
+@@ -30,11 +29,14 @@
  #include "oops/util/parameters/RequiredParameter.h"
  #include "oops/util/Printable.h"
  
@@ -23,7 +23,7 @@
  
  // -----------------------------------------------------------------------------
  /// Orography parameters
-@@ -171,7 +173,8 @@
+@@ -173,7 +175,8 @@
    Geometry(const Geometry &);
  
    // Variables sizes
@@ -33,7 +33,7 @@
  
    // Levels direction
    bool levelsAreTopDown() const
-@@ -212,6 +215,21 @@
+@@ -214,9 +217,24 @@
      {return interpolation_;}
    bool duplicatePoints() const
      {return duplicatePoints_;}
@@ -41,7 +41,9 @@
 +    {return eckit::mpi::self();}
 +  const std::vector<double> & vert_coord_avg(const std::string & var) const
 +    {return groups_[groupIndex_.at(var)].vert_coord_avg_;}
-+
+   const oops::GeometryData & generic() const
+     {return *geomData_;}
+ 
 +  // Geometry iterator
 +  GeometryIterator begin() const;
 +  GeometryIterator end() const;
@@ -52,19 +54,20 @@
 +    {return nnodes_;}
 +  const size_t & nlevs() const
 +    {return nlevs_;}
- 
++
   private:
    // Print
-@@ -279,6 +297,12 @@
- 
+   void print(std::ostream &) const;
+@@ -284,6 +302,12 @@
    // Duplicate points
    bool duplicatePoints_;
-+
+ 
 +  // Geometry iterator
 +  size_t iteratorDimension_;
 +  size_t nnodes_;
 +  size_t nlevs_;
 +  std::vector<double> vert_coord_avg_;
++
+   // Geometry data structure
+   std::unique_ptr<oops::GeometryData> geomData_;
  };
- 
- // -----------------------------------------------------------------------------

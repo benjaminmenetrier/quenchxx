@@ -1,5 +1,25 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc.tmp.bak	2024-12-05 10:04:27.753768112 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc	2024-12-05 10:06:08.017403867 +0100
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc.tmp.bak	2025-01-18 06:56:55.400721381 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/LinearVariableChange.cc	2025-01-18 06:22:21.133759114 +0100
+@@ -37,8 +37,8 @@
+     // Define output to input variables map
+     ASSERT(params.inputVariables.value()->size() == params.outputVariables.value()->size());
+     for (size_t jj = 0; jj < params.outputVariables.value()->size(); ++jj) {
+-      map_[(*params.outputVariables.value())[jj].name()] =
+-        (*params.inputVariables.value())[jj].name();
++      map_[(*params.outputVariables.value())[jj]] =
++        (*params.inputVariables.value())[jj];
+     }
+ 
+     // Read multiplicative factor
+@@ -63,7 +63,7 @@
+     util::readFieldSet(geom.getComm(),
+                        geom.functionSpace(),
+                        geom.variableSizes(*params.inputVariables.value()),
+-                       params.inputVariables.value()->variables(),
++                       *params.inputVariables.value(),
+                        conf,
+                        multiplierFset_);
+   }
 @@ -74,7 +74,7 @@
  // -----------------------------------------------------------------------------
  

@@ -51,6 +51,11 @@ class Covariance : public util::Printable,
   ~Covariance()
     {}
 
+  // Linearize
+  void linearize(const State &,
+                 const Geometry &)
+    {}
+
   // Multiply and inverse multiply
   void multiply(const Increment &,
                 Increment &) const
@@ -67,14 +72,9 @@ class Covariance : public util::Printable,
                          IncrModCtlVec &) const
     {throw eckit::NotImplemented(Here());}
 
-  // Linearize
-  void linearize(const State &,
-                 const Geometry &)
-    {}
-
   // Randomization
   void randomize(Increment & dxo) const
-    {dxo.random();}
+    {throw eckit::NotImplemented(Here());}
 
  private:
   // Print

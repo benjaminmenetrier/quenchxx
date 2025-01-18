@@ -73,17 +73,14 @@ void VariableChange::changeVar(State & x,
   // Create FieldSet
   atlas::FieldSet fset;
 
-  if (vader_) {
-    // State to FieldSet
-    x.toFieldSet(fset);
+  // State to FieldSet
+  x.toFieldSet(fset);
 
+  if (vader_) {
     // Call vader
     varns::Variables varsCha(vars_out);
     vader_->changeVar(fset, varsCha);
   } else {
-    // Convert state to field set
-    x.toFieldSet(fset);
-
     // Create any fields that do not exist
     for (auto & var : vars_out) {
       if (!fset.has(var.name())) {

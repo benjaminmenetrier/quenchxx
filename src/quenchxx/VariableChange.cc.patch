@@ -1,6 +1,6 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc.tmp.bak	2024-12-05 10:04:27.777768268 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/VariableChange.cc	2024-12-05 10:06:54.428687861 +0100
-@@ -8,11 +8,23 @@
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/VariableChange.cc.tmp.bak	2025-01-18 06:56:55.423721427 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/VariableChange.cc	2025-01-18 04:41:26.558032884 +0100
+@@ -8,11 +8,24 @@
  
  #include "quenchxx/VariableChange.h"
  
@@ -21,10 +21,11 @@
 +#include "quenchxx/ModelData.h"
 +#include "quenchxx/State.h"
 +#include "quenchxx/VaderCookbook.h"
- #include "quenchxx/VariableChangeParameters.h"
++#include "quenchxx/VariableChangeParameters.h"
  
  namespace quenchxx {
-@@ -21,38 +33,73 @@
+ 
+@@ -20,15 +33,41 @@
  
  VariableChange::VariableChange(const eckit::Configuration & config,
                                 const Geometry & geom)
@@ -68,11 +69,10 @@
    oops::Log::trace() << classname() << "::changeVar starting" << std::endl;
  
    // Create FieldSet
-   atlas::FieldSet fset;
+@@ -37,21 +76,27 @@
+   // State to FieldSet
+   x.toFieldSet(fset);
  
--  // State to FieldSet
--  x.toFieldSet(fset);
--
 -  // Create any fields that do not exist
 -  for (auto & var : vars_out) {
 -    if (!fset.has(var.name())) {
@@ -80,16 +80,10 @@
 -        atlas::option::name(var.name()) |
 -        atlas::option::levels(geom_.levels(var.name()))));
 +  if (vader_) {
-+    // State to FieldSet
-+    x.toFieldSet(fset);
-+
 +    // Call vader
 +    varns::Variables varsCha(vars_out);
 +    vader_->changeVar(fset, varsCha);
 +  } else {
-+    // Convert state to field set
-+    x.toFieldSet(fset);
-+
 +    // Create any fields that do not exist
 +    for (auto & var : vars_out) {
 +      if (!fset.has(var.name())) {
@@ -116,7 +110,7 @@
  
    // FieldSet to State
    x.fromFieldSet(fset);
-@@ -63,11 +110,24 @@
+@@ -62,11 +107,24 @@
  // -----------------------------------------------------------------------------
  
  void VariableChange::changeVarInverse(State & x,

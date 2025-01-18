@@ -12,7 +12,6 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/FieldSetHelpers.h"
-#include "oops/util/FieldSetOperations.h"
 
 #include "quenchxx/VariablesSwitch.h"
 

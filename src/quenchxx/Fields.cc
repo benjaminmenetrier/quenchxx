@@ -20,7 +20,9 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
@@ -274,7 +276,7 @@ void Fields::constantValue(const std::vector<double> & profile) {
     const std::string gmaskName = "gmask_" + std::to_string(geom_->groupIndex(var.name()));
     const auto gmaskView = atlas::array::make_view<int, 2>(geom_->fields()[gmaskName]);
     if (field.rank() == 2) {
-      ASSERT(field.shape(1) == profile.size());
+      ASSERT(field.shape(1) == static_cast<int>(profile.size()));
       auto view = atlas::array::make_view<double, 2>(field);
       view.assign(0.0);
       for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {

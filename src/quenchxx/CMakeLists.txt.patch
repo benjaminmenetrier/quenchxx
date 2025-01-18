@@ -1,6 +1,6 @@
---- /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/CMakeLists.txt.tmp.bak	2024-12-03 10:26:14.334764001 +0100
-+++ /home/benjaminm/code/oops-bundle/quenchxx/src/quenchxx/CMakeLists.txt	2024-12-03 10:25:41.971562566 +0100
-@@ -4,46 +4,115 @@
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/CMakeLists.txt.tmp.bak	2025-01-18 06:56:55.494721570 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/CMakeLists.txt	2024-12-03 10:25:41.971562566 +0100
+@@ -4,45 +4,115 @@
  # This software is licensed under the terms of the Apache Licence Version 2.0
  # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  
@@ -40,7 +40,7 @@
 +VaderCookbook.h
  VariableChange.cc
 +VariableChange.h
- VariableChangeParameters.h
++VariableChangeParameters.h
 +VariablesSwitch.h
  
  )
