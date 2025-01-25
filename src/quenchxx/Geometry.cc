@@ -308,7 +308,9 @@ Geometry::Geometry(const eckit::Configuration & config,
   }
 
   // GeometryData
-  geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+  if (interpolation_.getString("interpolation type") == "unstructured") {
+    geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+  }
 
   // Print summary
   this->print(oops::Log::info());
@@ -376,7 +378,9 @@ Geometry::Geometry(const Geometry & other)
   }
 
   // Geometry data
-  geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+  if (interpolation_.getString("interpolation type") == "unstructured") {
+    geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+  }
 
   oops::Log::trace() << classname() << "::Geometry done" << std::endl;
 }
