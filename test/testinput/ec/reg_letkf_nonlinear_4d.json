@@ -1,7 +1,7 @@
 {
   "time window": {
     "begin": "2010-01-01T11:59:59Z",
-    "length": "PT2S"
+    "length": "PT6H2S"
   },
   "geometry": {
     "function space": "StructuredColumns",
@@ -32,7 +32,7 @@
     "halo": "1"
   },
   "model": {
-    "tstep": "PT6H"
+    "tstep": "PT6H2S"
   },
   "background": {
     "members from template": {
@@ -42,6 +42,11 @@
             "date": "2010-01-01T12:00:00Z",
             "variables": ["air_temperature"],
             "filepath": "testdata/reg_ens_12_%mem%"
+          },
+          {
+            "date": "2010-01-01T18:00:00Z",
+            "variables": ["air_temperature"],
+            "filepath": "testdata/reg_ens_18_%mem%"
           }
         ]
       },
@@ -59,7 +64,32 @@
             "filepath": "testdata/reg_obs_12"
           },
           "ObsDataOut": {
-            "filepath": "testdata/reg_obs_letkf"
+            "filepath": "testdata/reg_obs_letkf_nonlinear_4d_12"
+          },
+          "obsvalue": "ObsValue"
+        },
+        "Covariance": {
+          "ObsErrorCovariance": {
+            "covariance": "diagonal",
+            "obserror": "ObsError"
+          }
+        },
+        "obs localizations": [
+          {
+            "localization method": "default",
+            "horizontal length-scale": 1000000
+          }
+        ],
+        "variables": ["air_temperature"]
+      },
+      {
+        "ObsType": "default",
+        "ObsData": {
+          "ObsDataIn": {
+            "filepath": "testdata/reg_obs_18"
+          },
+          "ObsDataOut": {
+            "filepath": "testdata/reg_obs_letkf_nonlinear_4d_18"
           },
           "obsvalue": "ObsValue"
         },
@@ -97,24 +127,38 @@
     }
   },
   "output": {
-    "filepath": "testdata/reg_letkf_state"
+    "states": [
+      {
+        "filepath": "testdata/reg_letkf_nonlinear_4d_12_state"
+      },
+      {
+        "filepath": "testdata/reg_letkf_nonlinear_4d_18_state"
+      }
+    ]
   },
   "output increment": {
-    "filepath": "testdata/reg_letkf_increment"
+    "filepath": "testdata/reg_letkf_nonlinear_4d_increment"
   },
   "output ensemble increments": {
-    "filepath": "testdata/reg_letkf_increment"
+    "filepath": "testdata/reg_letkf_nonlinear_4d_increment"
   },
   "output mean prior": {
-    "filepath": "testdata/reg_letkf_mean_prior"
+    "states": [
+      {
+        "filepath": "testdata/reg_letkf_nonlinear_4d_12_mean_prior"
+      },
+      {
+        "filepath": "testdata/reg_letkf_nonlinear_4d_18_mean_prior"
+      }
+    ]
   },
   "output variance prior": {
-    "filepath": "testdata/reg_letkf_var_prior"
+    "filepath": "testdata/reg_letkf_nonlinear_4d_var_prior"
   },
   "output variance posterior": {
-    "filepath": "testdata/reg_letkf_var_posterior"
+    "filepath": "testdata/reg_letkf_nonlinear_4d_var_posterior"
   },
   "test": {
-    "reference filename": "testref/ec/reg_letkf.ref"
+    "reference filename": "testref/ec/reg_letkf_nonlinear_4d.ref"
   }
 }

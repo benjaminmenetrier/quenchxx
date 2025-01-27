@@ -106,7 +106,10 @@ testinput/ec/glb_ensemble_12.json
 testinput/ec/glb_ensemble_18.json
 testinput/ec/glb_hofx.json
 testinput/ec/glb_interfaces.json
-testinput/ec/glb_letkf.json
+testinput/ec/glb_letkf_linear.json
+testinput/ec/glb_letkf_linear_4d.json
+testinput/ec/glb_letkf_nonlinear.json
+testinput/ec/glb_letkf_nonlinear_4d.json
 testinput/ec/glb_makeobs_06.json
 testinput/ec/glb_makeobs_12.json
 testinput/ec/glb_makeobs_18.json
@@ -127,7 +130,10 @@ testinput/ec/reg_ensemble_12.json
 testinput/ec/reg_ensemble_18.json
 testinput/ec/reg_hofx.json
 testinput/ec/reg_interfaces.json
-testinput/ec/reg_letkf.json
+testinput/ec/reg_letkf_linear.json
+testinput/ec/reg_letkf_linear_4d.json
+testinput/ec/reg_letkf_nonlinear.json
+testinput/ec/reg_letkf_nonlinear_4d.json
 testinput/ec/reg_makeobs_06.json
 testinput/ec/reg_makeobs_12.json
 testinput/ec/reg_makeobs_18.json
@@ -172,7 +178,10 @@ testinput/jedi/glb_makeobs_18.yaml
 testinput/jedi/glb_3dvar.yaml
 testinput/jedi/glb_3densvar.yaml
 testinput/jedi/glb_4densvar.yaml
-testinput/jedi/glb_letkf.yaml
+testinput/jedi/glb_letkf_linear.yaml
+testinput/jedi/glb_letkf_linear_4d.yaml
+testinput/jedi/glb_letkf_nonlinear.yaml
+testinput/jedi/glb_letkf_nonlinear_4d.yaml
 
 # REGIONAL
 testinput/jedi/reg_stddev.yaml
@@ -191,7 +200,10 @@ testinput/jedi/reg_makeobs_18.yaml
 testinput/jedi/reg_3dvar.yaml
 testinput/jedi/reg_3densvar.yaml
 testinput/jedi/reg_4densvar.yaml
-testinput/jedi/reg_letkf.yaml
+testinput/jedi/reg_letkf_linear.yaml
+testinput/jedi/reg_letkf_linear_4d.yaml
+testinput/jedi/reg_letkf_nonlinear.yaml
+testinput/jedi/reg_letkf_nonlinear_4d.yaml
 
 )
 
@@ -270,15 +282,20 @@ testref/ec/glb_3dvar.ref
 testref/ec/glb_3densvar.ref
 testref/ec/glb_4densvar.ref
 testref/ec/glb_hofx.ref
-testref/ec/glb_letkf.ref
-testref/ec/glb_3dvar.ref
+testref/ec/glb_letkf_linear.ref
+testref/ec/glb_letkf_linear_4d.ref
+testref/ec/glb_letkf_nonlinear.ref
+testref/ec/glb_letkf_nonlinear_4d.ref
 
 # REGIONAL
 testref/ec/reg_3dvar.ref
 testref/ec/reg_3densvar.ref
 testref/ec/reg_4densvar.ref
 testref/ec/reg_hofx.ref
-testref/ec/reg_letkf.ref
+testref/ec/reg_letkf_linear.ref
+testref/ec/reg_letkf_linear_4d.ref
+testref/ec/reg_letkf_nonlinear.ref
+testref/ec/reg_letkf_nonlinear_4d.ref
 
 # SYNTHETIC DATA
 testref/ec/synthetic_data_generate.ref
@@ -303,13 +320,19 @@ testref/jedi/genint_hofx3d_lambertCC.ref
 testref/jedi/glb_3dvar.ref
 testref/jedi/glb_3densvar.ref
 testref/jedi/glb_4densvar.ref
-testref/jedi/glb_letkf.ref
+testref/jedi/glb_letkf_linear.ref
+testref/jedi/glb_letkf_linear_4d.ref
+testref/jedi/glb_letkf_nonlinear.ref
+testref/jedi/glb_letkf_nonlinear_4d.ref
 
 # REGIONAL
 testref/jedi/reg_3dvar.ref
 testref/jedi/reg_3densvar.ref
 testref/jedi/reg_4densvar.ref
-testref/jedi/reg_letkf.ref
+testref/jedi/reg_letkf_linear.ref
+testref/jedi/reg_letkf_linear_4d.ref
+testref/jedi/reg_letkf_nonlinear.ref
+testref/jedi/reg_letkf_nonlinear_4d.ref
 )
 
 # Link input configurations and output references
@@ -358,7 +381,10 @@ foreach( mpi "1" "4" )
         create_test( ${domain}_3dvar ${mpi} variational )
         create_test( ${domain}_3densvar ${mpi} variational )
         create_test( ${domain}_4densvar ${mpi} variational )
-        create_test( ${domain}_letkf ${mpi} letkf )
+        create_test( ${domain}_letkf_linear ${mpi} letkf )
+        create_test( ${domain}_letkf_linear_4d ${mpi} letkf )
+        create_test( ${domain}_letkf_nonlinear ${mpi} letkf )
+        create_test( ${domain}_letkf_nonlinear_4d ${mpi} letkf )
     endforeach()
 
     if( ECSABER )

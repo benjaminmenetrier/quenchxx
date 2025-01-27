@@ -4,11 +4,21 @@ time window:
 geometry:
   function space: StructuredColumns
   grid:
-    type: regular_lonlat
-    N: 10
+    type: regional
+    nx: 71
+    ny: 53
+    dx: 2.5e3
+    dy: 2.5e3
+    lonlat(centre): [9.9, 56.3]
+    projection:
+      type: lambert_conformal_conic
+      latitude0: 56.3
+      longitude0: 0.0
+    y_numbering: 1
+  partitioner: checkerboard
   groups:
   - variables:
-    - air_temperature
+     - air_temperature
     levels: 2
     vert_coord: &vert_coord [1,2]
   halo: 1
@@ -18,7 +28,7 @@ background:
       date: 2010-01-01T12:00:00Z
       state variables:
       - air_temperature
-      filepath: testdata/glb_ens_12_%mem%
+      filepath: testdata/reg_ens_12_%mem%
     pattern: %mem%
     zero padding: 6
     nmembers: 10
@@ -33,11 +43,11 @@ observations:
       obsdatain:
         engine:
           type: H5File
-          obsfile: testdata/glb_obs_12.nc
+          obsfile: testdata/reg_obs_12.nc
       obsdataout:
         engine:
           type: H5File
-          obsfile: testdata/glb_obs_letkf.nc
+          obsfile: testdata/reg_obs_letkf_nonlinear.nc
     obs operator:
       name: VertInterp
       constant vertical coordinate values: *vert_coord
@@ -63,16 +73,16 @@ local ensemble DA:
     rtpp: 0.5
     mult: 1.1
 output:
-  filepath: testdata/glb_letkf_state
+  filepath: testdata/reg_letkf_nonlinear_state
 output increment:
-  filepath: testdata/glb_letkf_increment
+  filepath: testdata/reg_letkf_nonlinear_increment
 output ensemble increments:
-  filepath: testdata/glb_letkf_increment
+  filepath: testdata/reg_letkf_nonlinear_increment
 output mean prior:
-  filepath: testdata/glb_letkf_mean_prior
+  filepath: testdata/reg_letkf_nonlinear_mean_prior
 output variance prior:
-  filepath: testdata/glb_letkf_var_prior
+  filepath: testdata/reg_letkf_nonlinear_var_prior
 output variance posterior:
-  filepath: testdata/glb_letkf_var_posterior
+  filepath: testdata/reg_letkf_nonlinear_var_posterior
 test:
-  reference filename: testref/jedi/glb_letkf.ref
+  reference filename: testref/jedi/reg_letkf_nonlinear.ref

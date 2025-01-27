@@ -1,5 +1,5 @@
---- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.cc.tmp.bak	2025-01-18 06:56:55.434721449 +0100
-+++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.cc	2024-12-06 18:28:36.452316245 +0100
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.cc.tmp	2025-01-27 14:13:00.202232587 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Geometry.cc	2025-01-25 05:39:12.299007164 +0100
 @@ -30,6 +30,7 @@
  #include "oops/util/Logger.h"
  
@@ -49,9 +49,9 @@
 +  }
 +
    // GeometryData
-   geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
- 
-@@ -295,7 +323,8 @@
+   if (interpolation_.getString("interpolation type") == "unstructured") {
+     geomData_.reset(new oops::GeometryData(functionSpace_, fields_, levelsAreTopDown_, comm_));
+@@ -297,7 +325,8 @@
    partitioner_(other.partitioner_), mesh_(other.mesh_), groupIndex_(other.groupIndex_),
    levelsAreTopDown_(other.levelsAreTopDown_), modelData_(other.modelData_), alias_(other.alias_),
    latSouthToNorth_(other.latSouthToNorth_), interpolation_(other.interpolation_),
@@ -61,7 +61,7 @@
    oops::Log::trace() << classname() << "::Geometry starting" << std::endl;
  
    // Copy function space
-@@ -354,7 +383,7 @@
+@@ -358,7 +387,7 @@
  
  // -----------------------------------------------------------------------------
  
@@ -70,7 +70,7 @@
    oops::Log::trace() << classname() << "::variableSizes starting" << std::endl;
  
    std::vector<size_t> sizes;
-@@ -368,6 +397,18 @@
+@@ -372,6 +401,18 @@
  
  // -----------------------------------------------------------------------------
  
@@ -89,7 +89,7 @@
  void Geometry::print(std::ostream & os) const {
    oops::Log::trace() << classname() << "::print starting" << std::endl;
  
-@@ -451,7 +492,7 @@
+@@ -455,7 +496,7 @@
      std::vector<float> zlat(nlat);
      std::vector<uint8_t> zlsm(nlat*nlon);
      if ((retval = nc_get_var_float(ncid, lon_id, zlon.data()))) ERR(retval, "lon");
@@ -98,7 +98,7 @@
      if ((retval = nc_get_var_ubyte(ncid, lsm_id, zlsm.data()))) ERR(retval, "LMASK");
  
      // Copy data
-@@ -537,5 +578,23 @@
+@@ -541,5 +582,23 @@
  }
  
  // -----------------------------------------------------------------------------
