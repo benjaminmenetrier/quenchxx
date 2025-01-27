@@ -1,5 +1,5 @@
---- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Interpolation.cc.tmp.bak	2025-01-18 06:59:04.664098981 +0100
-+++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Interpolation.cc	2025-01-18 06:58:09.132909138 +0100
+--- /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Interpolation.cc.tmp.bak	2025-01-25 06:30:40.428094338 +0100
++++ /home/benjaminm/code/jedi-bundle/quenchxx/src/quenchxx/Interpolation.cc	2025-01-25 06:31:32.782095816 +0100
 @@ -13,6 +13,8 @@
  
  #include "oops/util/FieldSetHelpers.h"
@@ -9,7 +9,7 @@
  // -----------------------------------------------------------------------------
  
  namespace quenchxx {
-@@ -86,7 +88,7 @@
+@@ -80,7 +82,7 @@
      fset.haloExchange();
  
      // Apply unstructured interpolator
@@ -18,7 +18,7 @@
      std::vector<double> vals;
      unstructuredInterp_->apply(vars, fset, vals);
  
-@@ -137,7 +139,7 @@
+@@ -133,7 +135,7 @@
      }
  
      // Apply unstructured interpolator, adjoint

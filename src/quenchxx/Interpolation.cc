@@ -35,26 +35,20 @@ Interpolation::Interpolation(const Geometry & geom,
   // Setup interpolation
   if (type == "atlas interpolation wrapper") {
     atlasInterpWrapper_ = std::make_shared<saber::interpolation::AtlasInterpWrapper>(
-      geom.partitioner(), geom.functionSpace(), tgtGrid, tgtFspace);
+      geom.partitioner(), geom.functionSpace(), tgtGrid, tgtFspace_);
   } else if (type == "regional") {
     regionalInterp_ = std::make_shared<atlas::Interpolation>(
       atlas::util::Config("type", "regional-linear-2d"),
-      geom.functionSpace(), tgtFspace);
+      geom.functionSpace(), tgtFspace_);
   } else if (type == "unstructured") {
-    // Get ghost points
-    const auto tgtGhostView = atlas::array::make_view<int, 1>(tgtFspace.ghost());
-    for (atlas::idx_t jnode = 0; jnode < tgtFspace.ghost().shape(0); ++jnode) {
-      tgtGhostVector_.push_back(tgtGhostView(jnode));
-    }
-
     // Get longitudes/latitudes
     std::vector<double> lons;
     std::vector<double> lats;
-    const auto lonLatField = tgtFspace.lonlat();
+    const auto lonLatField = tgtFspace_.lonlat();
     const auto lonLatView = atlas::array::make_view<double, 2>(lonLatField);
+    const auto tgtGhostView = atlas::array::make_view<int, 1>(tgtFspace_.ghost());
     for (atlas::idx_t jnode = 0; jnode < lonLatField.shape(0); ++jnode) {
-      tgtGhostVector_.push_back(tgtGhostView(jnode));
-      if (tgtGhostVector_[jnode] == 0) {
+      if (tgtGhostView(jnode) == 0) {
         lons.push_back(lonLatView(jnode, 0));
         lats.push_back(lonLatView(jnode, 1));
       }
@@ -93,12 +87,13 @@ void Interpolation::execute(const atlas::FieldSet & srcFieldSet,
     unstructuredInterp_->apply(vars, fset, vals);
 
     // Format data
+    const auto tgtGhostView = atlas::array::make_view<int, 1>(tgtFspace_.ghost());
     size_t index = 0;
     for (auto & tgtField : tgtFieldSet) {
       auto tgtView = atlas::array::make_view<double, 2>(tgtField);
       for (atlas::idx_t jlevel = 0; jlevel < tgtView.shape(1); ++jlevel) {
         for (atlas::idx_t jnode = 0; jnode < tgtView.shape(0); ++jnode) {
-          if (tgtGhostVector_[jnode] == 0) {
+          if (tgtGhostView(jnode) == 0) {
             tgtView(jnode, jlevel) = vals[index];
             ++index;
           }
@@ -126,12 +121,13 @@ void Interpolation::executeAdjoint(atlas::FieldSet & srcFieldSet,
   }
   if (unstructuredInterp_) {
     // Format data
+    const auto tgtGhostView = atlas::array::make_view<int, 1>(tgtFspace_.ghost());
     std::vector<double> vals;
     for (const auto & tgtField : tgtFieldSet) {
       const auto tgtView = atlas::array::make_view<double, 2>(tgtField);
       for (atlas::idx_t jlevel = 0; jlevel < tgtField.shape(1); ++jlevel) {
         for (atlas::idx_t jnode = 0; jnode < tgtField.shape(0); ++jnode) {
-          if (tgtGhostVector_[jnode] == 0) {
+          if (tgtGhostView(jnode) == 0) {
             vals.push_back(tgtView(jnode, jlevel));
           }
         }
