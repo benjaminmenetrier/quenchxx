@@ -20,6 +20,8 @@
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
 
+#include "quenchxx/Utilities.h"
+
 namespace quenchxx {
 
 // -----------------------------------------------------------------------------
@@ -50,7 +52,7 @@ ObsVector::ObsVector(const ObsVector & other,
     missing_(util::missingValue<double>()) {
   oops::Log::trace() << classname() << "::ObsVector starting" << std::endl;
 
-  util::copyFieldSet(other.data_, data_);
+  copyFieldSetWithoutFunctionSpace(other.data_, data_);
   if (!copy) {
     zero();
   }
@@ -63,7 +65,7 @@ ObsVector::ObsVector(const ObsVector & other,
 ObsVector & ObsVector::operator= (const ObsVector & rhs) {
   oops::Log::trace() << classname() << "::operator= starting" << std::endl;
 
-  util::copyFieldSet(rhs.data_, data_);
+  copyFieldSetWithoutFunctionSpace(rhs.data_, data_);
 
   oops::Log::trace() << classname() << "::operator= done" << std::endl;
   return *this;
@@ -154,7 +156,7 @@ void ObsVector::invert() {
   oops::Log::trace() << classname() << "::invert starting" << std::endl;
 
   atlas::FieldSet tmp;
-  util::copyFieldSet(data_, tmp);
+  copyFieldSetWithoutFunctionSpace(data_, tmp);
   ones();
   util::divideFieldSets(data_, tmp);
 
@@ -168,7 +170,7 @@ void ObsVector::axpy(const double & zz,
   oops::Log::trace() << classname() << "::axpy starting" << std::endl;
 
   atlas::FieldSet tmp;
-  util::copyFieldSet(rhs.data_, tmp);
+  copyFieldSetWithoutFunctionSpace(rhs.data_, tmp);
   util::multiplyFieldSet(tmp, zz);
   util::addFieldSets(data_, tmp);
 

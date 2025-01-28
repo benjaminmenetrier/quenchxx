@@ -43,7 +43,8 @@
 
 #include "quenchxx/Geometry.h"
 
-#define ERR(e, msg) {std::string s(nc_strerror(e)); ABORT(s + " : " + msg);}
+#define ERR(e, msg) {std::string s(nc_strerror(e)); \
+  throw eckit::Exception(s + " : " + msg, Here());}
 
 namespace quenchxx {
 
@@ -1224,7 +1225,7 @@ void Fields::read(const eckit::Configuration & config) {
     }
 
     // NetCDF file path
-    std::string ncfilepath = filepath + ".nc";
+    std::string ncFilePath = filepath + ".nc";
 
     // Clear local fieldset
     fset_.clear();
@@ -1276,10 +1277,10 @@ void Fields::read(const eckit::Configuration & config) {
       atlas::idx_t nx = grid.nxmax();
       atlas::idx_t ny = grid.ny();
 
-      oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
+      oops::Log::info() << "Info     : Reading file: " << ncFilePath << std::endl;
 
       // Open NetCDF file
-      if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncfilepath);
+      if ((retval = nc_open(ncFilePath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncFilePath);
 
       // Get variables
       for (size_t jVarLev = 0; jVarLev < nVarLev; ++jVarLev) {
@@ -1310,7 +1311,7 @@ void Fields::read(const eckit::Configuration & config) {
       }
 
       // Close file
-      if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
+      if ((retval = nc_close(ncid))) ERR(retval, ncFilePath);
     }
 
     // Scatter data from main processor

@@ -21,7 +21,6 @@
 
 #include "eckit/serialisation/Stream.h"
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"

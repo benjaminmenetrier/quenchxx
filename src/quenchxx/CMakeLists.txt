@@ -34,6 +34,8 @@ State.cc
 State.h
 Traits.h
 TraitsFwd.h
+Utilities.cc
+Utilities.h
 VaderCookbook.h
 VariableChange.cc
 VariableChange.h

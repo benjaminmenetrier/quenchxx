@@ -27,13 +27,14 @@
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
-#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/missingValues.h"
 
 #include "quenchxx/GeoVaLs.h"
 #include "quenchxx/ObsVector.h"
+#include "quenchxx/Utilities.h"
 
-#define ERR(e) {throw eckit::Exception(nc_strerror(e), Here());}
+#define ERR(e, msg) {std::string s(nc_strerror(e)); \
+  throw eckit::Exception(s + " : " + msg, Here());}
 
 namespace quenchxx {
 
@@ -145,7 +146,7 @@ void ObsSpace::putdb(const atlas::FieldSet & fset) const {
   if (!existingFieldSet) {
     // FieldSet name not found, inserting new FieldSet
     atlas::FieldSet dataFset;
-    util::copyFieldSet(fset, dataFset);
+    copyFieldSetWithoutFunctionSpace(fset, dataFset);
     data_.emplace_back(dataFset);
   }
 
@@ -162,7 +163,7 @@ void ObsSpace::getdb(atlas::FieldSet & fset) const {
     if (dataFset.name() == fset.name()) {
       // FieldSet found, copy fields
       fset.clear();
-      util::copyFieldSet(dataFset, fset);
+      copyFieldSetWithoutFunctionSpace(dataFset, fset);
       existingFieldSet = true;
     }
   }
@@ -475,29 +476,30 @@ void ObsSpace::read(const std::string & filePath) {
   nobsOwnVec_.resize(comm_.size());
 
   // NetCDF IDs
+  std::string ncFilePath;
   int retval, ncid, nobs_id, dateTime_id, order_id, longitude_id, latitude_id, height_id, data_id;
   std::vector<int> group_ids;
 
   if (comm_.rank() == 0) {
     // Open NetCDF file
-    std::string ncFilePath = filePath + ".nc";
+    ncFilePath = filePath + ".nc";
     oops::Log::info() << "Info     : Reading file: " << ncFilePath << std::endl;
-    if (retval = nc_open(ncFilePath.c_str(), NC_NOWRITE, &ncid)) ERR(retval);
+    if (retval = nc_open(ncFilePath.c_str(), NC_NOWRITE, &ncid)) ERR(retval, ncFilePath);
 
     // Get dimension
-    if (retval = nc_inq_dimid(ncid, "Location", &nobs_id)) ERR(retval);
-    if (retval = nc_inq_dimlen(ncid, nobs_id, &nobsGlb_)) ERR(retval);
+    if (retval = nc_inq_dimid(ncid, "Location", &nobs_id)) ERR(retval, "Location");
+    if (retval = nc_inq_dimlen(ncid, nobs_id, &nobsGlb_)) ERR(retval, "Location");
 
     // Get groups list
-    if (retval = nc_inq_grps(ncid, &ngrp, NULL)) ERR(retval);
+    if (retval = nc_inq_grps(ncid, &ngrp, NULL)) ERR(retval, "ngrp");
     group_ids.resize(ngrp);
-    if (retval = nc_inq_grps(ncid, NULL, group_ids.data())) ERR(retval);
+    if (retval = nc_inq_grps(ncid, NULL, group_ids.data())) ERR(retval, "group_ids");
 
     // Get order if available
     order_.resize(nobsGlb_);
     retval = nc_inq_varid(ncid, "order", &order_id);
     if (retval == NC_NOERR) {
-      if (retval = nc_get_var_int(ncid, order_id, order_.data())) ERR(retval);
+      if (retval = nc_get_var_int(ncid, order_id, order_.data())) ERR(retval, "order");
     } else {
       for (size_t jo = 0; jo < nobsGlb_; ++jo) {
         order_[jo] = jo;
@@ -506,20 +508,21 @@ void ObsSpace::read(const std::string & filePath) {
 
     // Get MetaData
     int meta_group_id;
-    if (retval = nc_inq_grp_ncid(ncid, "MetaData", &meta_group_id)) ERR(retval);
+    if (retval = nc_inq_grp_ncid(ncid, "MetaData", &meta_group_id)) ERR(retval, "MetaData");
 
     // Get dateTime from MetaData
     std::vector<int64_t> dateTime(nobsGlb_);
-    if (retval = nc_inq_varid(meta_group_id, "dateTime", &dateTime_id)) ERR(retval);
-    if (retval = nc_get_var_long(meta_group_id, dateTime_id, dateTime.data())) ERR(retval);
+    if (retval = nc_inq_varid(meta_group_id, "dateTime", &dateTime_id)) ERR(retval, "dateTime");
+    if (retval = nc_get_var_long(meta_group_id, dateTime_id, dateTime.data())) ERR(retval,
+      "dateTime");
     const std::string dateTime_units_key = "units";
     size_t attlen;
     if (retval = nc_inq_attlen(meta_group_id, dateTime_id, dateTime_units_key.c_str(),
-      &attlen)) ERR(retval);
+      &attlen)) ERR(retval, "dateTime");
     char **dateTime_units_char = reinterpret_cast<char**>(malloc(attlen*sizeof(char*)));
     memset(dateTime_units_char, 0, attlen*sizeof(char*));
     if (retval = nc_get_att_string(meta_group_id, dateTime_id, dateTime_units_key.c_str(),
-      dateTime_units_char)) ERR(retval);
+      dateTime_units_char)) ERR(retval, "dateTime");
     const std::string dateTime_units_value(*dateTime_units_char);
     const util::DateTime start(dateTime_units_value.substr(14, 20));
 
@@ -527,13 +530,15 @@ void ObsSpace::read(const std::string & filePath) {
     std::vector<float> longitude(nobsGlb_);
     std::vector<float> latitude(nobsGlb_);
     std::vector<float> height(nobsGlb_);
-    if (retval = nc_inq_varid(meta_group_id, "longitude", &longitude_id)) ERR(retval);
+    if (retval = nc_inq_varid(meta_group_id, "longitude", &longitude_id)) ERR(retval,
+      "longitude");
     if (retval = nc_get_var_float(meta_group_id, longitude_id, longitude.data()))
-      ERR(retval);
-    if (retval = nc_inq_varid(meta_group_id, "latitude", &latitude_id)) ERR(retval);
-    if (retval = nc_get_var_float(meta_group_id, latitude_id, latitude.data())) ERR(retval);
-    if (retval = nc_inq_varid(meta_group_id, "height", &height_id)) ERR(retval);
-    if (retval = nc_get_var_float(meta_group_id, height_id, height.data())) ERR(retval);
+      ERR(retval, "longitude");
+    if (retval = nc_inq_varid(meta_group_id, "latitude", &latitude_id)) ERR(retval, "latitude");
+    if (retval = nc_get_var_float(meta_group_id, latitude_id, latitude.data())) ERR(retval,
+     "latitude");
+    if (retval = nc_inq_varid(meta_group_id, "height", &height_id)) ERR(retval, "height");
+    if (retval = nc_get_var_float(meta_group_id, height_id, height.data())) ERR(retval, "height");
 
     // Set mask
     nobsGlbAll_ = nobsGlb_;
@@ -616,9 +621,11 @@ void ObsSpace::read(const std::string & filePath) {
     std::string grpName;
     size_t grpNameLen = 0;
     if (comm_.rank() == 0) {
-      if (retval = nc_inq_grpname_len(group_ids[jgrp], &grpNameLen)) ERR(retval);
+      if (retval = nc_inq_grpname_len(group_ids[jgrp], &grpNameLen)) ERR(retval,
+        std::to_string(group_ids[jgrp]));
       grpName.resize(grpNameLen);
-      if (retval = nc_inq_grpname(group_ids[jgrp], &grpName[0])) ERR(retval);
+      if (retval = nc_inq_grpname(group_ids[jgrp], &grpName[0])) ERR(retval,
+        std::to_string(group_ids[jgrp]));
     }
     oops::mpi::broadcastString(comm_, grpName, 0);
 
@@ -630,8 +637,9 @@ void ObsSpace::read(const std::string & filePath) {
         for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
           // Get data
           if (retval = nc_inq_varid(group_ids[jgrp], vars_[jvar].name().c_str(), &data_id))
-            ERR(retval);
-          if (retval = nc_get_var_float(group_ids[jgrp], data_id, dataVar.data())) ERR(retval);
+            ERR(retval, vars_[jvar].name());
+          if (retval = nc_get_var_float(group_ids[jgrp], data_id, dataVar.data())) ERR(retval,
+            vars_[jvar].name());
 
           // Get ordered data
           std::vector<int> iobsOwnVec(comm_.size(), 0);
@@ -672,7 +680,7 @@ void ObsSpace::read(const std::string & filePath) {
 
   if (comm_.rank() == 0) {
     // Close file
-    if (retval = nc_close(ncid)) ERR(retval);
+    if (retval = nc_close(ncid)) ERR(retval, ncFilePath);
   }
 
   // Setup halo
@@ -763,7 +771,8 @@ void ObsSpace::write(const std::string & filePath,
   comm_.gatherv(locsOwn, locsGlb, locsCounts, locsDispls, 0);
 
   // NetCDF IDs
-  int retval, ncid, nobs_id, d_id[1], Locations_id, order_id, metaData_id, dateTime_id,
+  std::string ncFilePath;
+  int retval, ncid, nobs_id, d_id[1], Location_id, order_id, metaData_id, dateTime_id,
     longitude_id, latitude_id, height_id;
   std::vector<int> group_ids;
   std::vector<int> groupVar_ids;
@@ -813,105 +822,108 @@ void ObsSpace::write(const std::string & filePath,
     }
 
     // Create NetCDF file
-    const std::string ncFilePath = writeScreened ? filePath + "_screened.nc" : filePath + ".nc";
-    if (retval = nc_create(ncFilePath.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid)) ERR(retval);
+    ncFilePath = writeScreened ? filePath + "_screened.nc" : filePath + ".nc";
+    if (retval = nc_create(ncFilePath.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid)) ERR(retval,
+      ncFilePath);
 
     // Global attributes
     const std::string ioda_layout_key = "_ioda_layout";
     const std::string ioda_layout_value = "ObsGroup";
     const char *ioda_layout_char[1] = {ioda_layout_value.c_str()};
     if (retval = nc_put_att_string(ncid, NC_GLOBAL, ioda_layout_key.c_str(), 1, ioda_layout_char))
-      ERR(retval);
+      ERR(retval, ioda_layout_key);
     const std::string ioda_layout_version_key = "_ioda_layout_version";
     const int64_t ioda_layout_version_value = 0;
     if (retval = nc_put_att_long(ncid, NC_GLOBAL, ioda_layout_version_key.c_str(), NC_INT64, 1,
-      &ioda_layout_version_value)) ERR(retval);
+      &ioda_layout_version_value)) ERR(retval, ioda_layout_version_key);
 
     // Create dimension
-    if (retval = nc_def_dim(ncid, "Location", NC_UNLIMITED, &nobs_id)) ERR(retval);
+    if (retval = nc_def_dim(ncid, "Location", NC_UNLIMITED, &nobs_id)) ERR(retval, "Location");
     d_id[0] = nobs_id;
 
     // Missing value
     const std::string fillValue_key = "_FillValue";
 
     // Define global variables
-    if (retval = nc_def_var(ncid, "Location", NC_INT, 1, d_id, &Locations_id)) ERR(retval);
-    if (retval = nc_put_att_int(ncid, Locations_id, fillValue_key.c_str(), NC_INT, 1,
-      &util::missingValue<int>())) ERR(retval);
-    if (retval = nc_def_var(ncid, "order", NC_INT, 1, d_id, &order_id)) ERR(retval);
+    if (retval = nc_def_var(ncid, "Location", NC_INT, 1, d_id, &Location_id)) ERR(retval,
+      "Location");
+    if (retval = nc_put_att_int(ncid, Location_id, fillValue_key.c_str(), NC_INT, 1,
+      &util::missingValue<int>())) ERR(retval, "Location");
+    if (retval = nc_def_var(ncid, "order", NC_INT, 1, d_id, &order_id)) ERR(retval, "order");
     if (retval = nc_put_att_int(ncid, order_id, fillValue_key.c_str(), NC_INT, 1,
-      &util::missingValue<int>())) ERR(retval);
+      &util::missingValue<int>())) ERR(retval, "order");
 
     // Define metadata group
-    if (retval = nc_def_grp(ncid, "MetaData", &metaData_id)) ERR(retval);
+    if (retval = nc_def_grp(ncid, "MetaData", &metaData_id)) ERR(retval, "MetaData");
     if (retval = nc_def_var(metaData_id, "dateTime", NC_INT64, 1, d_id, &dateTime_id))
-      ERR(retval);
+      ERR(retval, "dateTime");
     if (retval = nc_put_att_long(metaData_id, dateTime_id, fillValue_key.c_str(), NC_INT64, 1,
-      &util::missingValue<int64_t>())) ERR(retval);
+      &util::missingValue<int64_t>())) ERR(retval, "dateTime");
     const std::string dateTime_units_key = "units";
     const std::string dateTime_units_value = "seconds since " + start.toString();
     const char *dateTime_units_char[1] = {dateTime_units_value.c_str()};
     if (retval = nc_put_att_string(metaData_id, dateTime_id, dateTime_units_key.c_str(),
-      1, dateTime_units_char)) ERR(retval);
+      1, dateTime_units_char)) ERR(retval, "dateTime");
     if (retval = nc_def_var(metaData_id, "longitude", NC_FLOAT, 1, d_id, &longitude_id))
-      ERR(retval);
+      ERR(retval, "longitude");
     if (retval = nc_put_att_float(metaData_id, longitude_id, fillValue_key.c_str(), NC_FLOAT, 1,
-      &util::missingValue<float>())) ERR(retval);
+      &util::missingValue<float>())) ERR(retval, "longitude");
     const std::string longitude_units_key = "units";
     const std::string longitude_units_value = "degrees_east";
     const char *longitude_units_char[1] = {longitude_units_value.c_str()};
     if (retval = nc_put_att_string(metaData_id, longitude_id, longitude_units_key.c_str(), 1,
-      longitude_units_char)) ERR(retval);
+      longitude_units_char)) ERR(retval, "longitude");
     if (retval = nc_def_var(metaData_id, "latitude", NC_FLOAT, 1, d_id, &latitude_id))
-      ERR(retval);
+      ERR(retval, "latitude");
     if (retval = nc_put_att_float(metaData_id, latitude_id, fillValue_key.c_str(), NC_FLOAT, 1,
-      &util::missingValue<float>())) ERR(retval);
+      &util::missingValue<float>())) ERR(retval, "latitude");
     const std::string latitude_units_key = "units";
     const std::string latitude_units_value = "degrees_north";
     const char *latitude_units_char[1] = {latitude_units_value.c_str()};
     if (retval = nc_put_att_string(metaData_id, latitude_id, latitude_units_key.c_str(), 1,
-      latitude_units_char)) ERR(retval);
+      latitude_units_char)) ERR(retval, "latitude");
     if (retval = nc_def_var(metaData_id, "height", NC_FLOAT, 1, d_id, &height_id))
-      ERR(retval);
+      ERR(retval, "height");
     if (retval = nc_put_att_float(metaData_id, height_id, fillValue_key.c_str(), NC_FLOAT, 1,
-      &util::missingValue<float>())) ERR(retval);
+      &util::missingValue<float>())) ERR(retval, "height");
     const std::string height_units_key = "units";
     const std::string height_units_value = "m";
     const char *height_units_char[1] = {height_units_value.c_str()};
     if (retval = nc_put_att_string(metaData_id, height_id, height_units_key.c_str(), 1,
-      height_units_char)) ERR(retval);
+      height_units_char)) ERR(retval, "height");
 
     // Define data groups
     for (auto const & fset : *data) {
       int group_id;
-      if (retval = nc_def_grp(ncid, fset.name().c_str(), &group_id)) ERR(retval);
+      if (retval = nc_def_grp(ncid, fset.name().c_str(), &group_id)) ERR(retval, fset.name());
       group_ids.push_back(group_id);
       for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
         int groupVar_id;
         if (retval = nc_def_var(group_id, vars_[jvar].name().c_str(), NC_FLOAT, 1, d_id,
-          &groupVar_id)) ERR(retval);
+          &groupVar_id)) ERR(retval, vars_[jvar].name());
         if (retval = nc_put_att_float(group_id, groupVar_id, fillValue_key.c_str(), NC_FLOAT, 1,
-          &util::missingValue<float>())) ERR(retval);
+          &util::missingValue<float>())) ERR(retval, vars_[jvar].name());
         groupVar_ids.push_back(groupVar_id);
       }
     }
 
     // End definition mode
-    if (retval = nc_enddef(ncid)) ERR(retval);
+    if (retval = nc_enddef(ncid)) ERR(retval, ncFilePath);
 
     // Write metadata
     const size_t init = 0;
     const size_t nobs = Locations.size();
-    if (retval = nc_put_vara_int(ncid, Locations_id, &init, &nobs, Locations.data())) ERR(retval);
-    if (retval = nc_put_vara_int(ncid, order_id, &init, &nobs, order_.data())) ERR(retval);
+    if (retval = nc_put_vara_int(ncid, Location_id, &init, &nobs, Locations.data())) ERR(retval,
+      "Location");
+    if (retval = nc_put_vara_int(ncid, order_id, &init, &nobs, order_.data())) ERR(retval, "order");
     if (retval = nc_put_vara_long(metaData_id, dateTime_id, &init, &nobs, dateTime.data()))
-      ERR(retval);
+      ERR(retval, "dateTime");
     if (retval = nc_put_vara_float(metaData_id, longitude_id, &init, &nobs, longitude.data()))
-      ERR(retval);
+      ERR(retval, "longitude");
     if (retval = nc_put_vara_float(metaData_id, latitude_id, &init, &nobs, latitude.data()))
-      ERR(retval);
+      ERR(retval, "latitude");
     if (retval = nc_put_vara_float(metaData_id, height_id, &init, &nobs, height.data()))
-      ERR(retval);
+      ERR(retval, "height");
   }
   size_t igrp = 0;
   for (auto const & fset : *data) {
@@ -935,7 +947,7 @@ void ObsSpace::write(const std::string & filePath,
           dataVar[jo] = static_cast<float>(dataGlb[jo*vars_.size()+jvar]);
         }
         if (retval = nc_put_var_float(group_ids[igrp], groupVar_ids[igrp*vars_.size()+jvar],
-          dataVar.data())) ERR(retval);
+          dataVar.data())) ERR(retval, (*data)[igrp].name() + "::" + vars_[jvar].name());
       }
     }
     ++igrp;
@@ -943,7 +955,7 @@ void ObsSpace::write(const std::string & filePath,
 
   if (comm_.rank() == 0) {
     // Close file
-    if (retval = nc_close(ncid)) ERR(retval);
+    if (retval = nc_close(ncid)) ERR(retval, ncFilePath);
   }
 
   // Reset pointers
