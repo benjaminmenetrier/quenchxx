@@ -361,7 +361,7 @@ void ObsSpace::printJo(const ObsVector &,
                        const ObsVector &) {
   oops::Log::trace() << classname() << "::printJo starting" << std::endl;
 
-  oops::Log::info() << "ObsSpace::printJo not implemented" << std::endl;
+  oops::Log::info() << "Info     : ObsSpace::printJo not implemented" << std::endl;
 
   oops::Log::trace() << classname() << "::printJo starting" << std::endl;
 }
@@ -481,7 +481,7 @@ void ObsSpace::read(const std::string & filePath) {
   if (comm_.rank() == 0) {
     // Open NetCDF file
     std::string ncFilePath = filePath + ".nc";
-    oops::Log::info() << "Reading file: " << ncFilePath << std::endl;
+    oops::Log::info() << "Info     : Reading file: " << ncFilePath << std::endl;
     if (retval = nc_open(ncFilePath.c_str(), NC_NOWRITE, &ncid)) ERR(retval);
 
     // Get dimension

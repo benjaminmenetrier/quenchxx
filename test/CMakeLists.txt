@@ -110,6 +110,7 @@ testinput/ec/glb_letkf_linear.json
 testinput/ec/glb_letkf_linear_4d.json
 testinput/ec/glb_letkf_nonlinear.json
 testinput/ec/glb_letkf_nonlinear_4d.json
+testinput/ec/glb_letkf_read_members.json
 testinput/ec/glb_makeobs_06.json
 testinput/ec/glb_makeobs_12.json
 testinput/ec/glb_makeobs_18.json
@@ -134,6 +135,7 @@ testinput/ec/reg_letkf_linear.json
 testinput/ec/reg_letkf_linear_4d.json
 testinput/ec/reg_letkf_nonlinear.json
 testinput/ec/reg_letkf_nonlinear_4d.json
+testinput/ec/reg_letkf_read_members.json
 testinput/ec/reg_makeobs_06.json
 testinput/ec/reg_makeobs_12.json
 testinput/ec/reg_makeobs_18.json
@@ -182,6 +184,7 @@ testinput/jedi/glb_letkf_linear.yaml
 testinput/jedi/glb_letkf_linear_4d.yaml
 testinput/jedi/glb_letkf_nonlinear.yaml
 testinput/jedi/glb_letkf_nonlinear_4d.yaml
+testinput/jedi/glb_letkf_read_members.yaml
 
 # REGIONAL
 testinput/jedi/reg_stddev.yaml
@@ -204,7 +207,7 @@ testinput/jedi/reg_letkf_linear.yaml
 testinput/jedi/reg_letkf_linear_4d.yaml
 testinput/jedi/reg_letkf_nonlinear.yaml
 testinput/jedi/reg_letkf_nonlinear_4d.yaml
-
+testinput/jedi/reg_letkf_read_members.yaml
 )
 
 # Test output references
@@ -286,6 +289,7 @@ testref/ec/glb_letkf_linear.ref
 testref/ec/glb_letkf_linear_4d.ref
 testref/ec/glb_letkf_nonlinear.ref
 testref/ec/glb_letkf_nonlinear_4d.ref
+testref/ec/glb_letkf_read_members.ref
 
 # REGIONAL
 testref/ec/reg_3dvar.ref
@@ -296,6 +300,7 @@ testref/ec/reg_letkf_linear.ref
 testref/ec/reg_letkf_linear_4d.ref
 testref/ec/reg_letkf_nonlinear.ref
 testref/ec/reg_letkf_nonlinear_4d.ref
+testref/ec/reg_letkf_read_members.ref
 
 # SYNTHETIC DATA
 testref/ec/synthetic_data_generate.ref
@@ -324,6 +329,7 @@ testref/jedi/glb_letkf_linear.ref
 testref/jedi/glb_letkf_linear_4d.ref
 testref/jedi/glb_letkf_nonlinear.ref
 testref/jedi/glb_letkf_nonlinear_4d.ref
+testref/jedi/glb_letkf_read_members.ref
 
 # REGIONAL
 testref/jedi/reg_3dvar.ref
@@ -333,6 +339,7 @@ testref/jedi/reg_letkf_linear.ref
 testref/jedi/reg_letkf_linear_4d.ref
 testref/jedi/reg_letkf_nonlinear.ref
 testref/jedi/reg_letkf_nonlinear_4d.ref
+testref/jedi/reg_letkf_read_members.ref
 )
 
 # Link input configurations and output references
@@ -385,6 +392,7 @@ foreach( mpi "1" "4" )
         create_test( ${domain}_letkf_linear_4d ${mpi} letkf )
         create_test( ${domain}_letkf_nonlinear ${mpi} letkf )
         create_test( ${domain}_letkf_nonlinear_4d ${mpi} letkf )
+        create_test( ${domain}_letkf_read_members ${mpi} letkf )
     endforeach()
 
     if( ECSABER )
